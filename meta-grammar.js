@@ -8,6 +8,10 @@ function stringify(value, indent) {
     return JSON.stringify(value)
   }
 
+  if (value.length === 0) {
+    return "[]"
+  }
+
   const nextIndent = indent + "  "
   let s = "[\n"
   for (let item of value) {
@@ -31,20 +35,21 @@ class Node {
     indent = indent || ""
     const nextIndent = indent + "  "
 
+    //let s = "{\n"
+    //s += nextIndent + "type: " + JSON.stringify(this.type) + ",\n"
     //let s = this.type + " {\n"
-    let s = "{\n"
-    s += nextIndent + "type: " + JSON.stringify(this.type) + ",\n"
+    let s = "{ type: " + JSON.stringify(this.type)
+    //s += nextIndent + "_text: " + JSON.stringify(this.region.text) + ",\n"
 
     const keys = Object.getOwnPropertyNames(this)
     for (let key of keys) {
       const value = this[key]
       if (key === "type" || key === "region") continue
-      s += nextIndent + key + ": "
+      s += ",\n" + nextIndent + key + ": "
       s += stringify(value, nextIndent)
-      s += ",\n"
     }
 
-    return s + indent + "}"
+    return s + ",\n" + indent + "}"
   }
 }
 
@@ -57,6 +62,10 @@ class Region {
 
   from(token, buffer) {
     return new Region(Pos.before(token), Pos.after(token), buffer)
+  }
+
+  get text() {
+    return this.buffer.slice(this.start.offset, this.end.offset)
   }
 }
 
@@ -142,7 +151,7 @@ Match -> :Token
 
 Name -> name:"identifier"
 List -> name:"name" "list"
-Token -> name:"string"
+Token -> value:"string"
 
 `
 
@@ -184,12 +193,12 @@ function parse(buffer) {
   }
 
   function parseValue() {
-    const value = tok.value
     const start = Pos.before(tok)
+    const value = tok.value
 
     if (tok.type === "string") {
       next()
-      return node("Token", start, {name: value})
+      return node("Token", start, {value})
     }
 
     if (tok.type !== "identifier") {
@@ -213,9 +222,9 @@ function parse(buffer) {
     const start = Pos.before(tok)
 
     if (tok.type === "string") {
-      const name = tok.value
+      const value = tok.value
       next()
-      return node("Name", start, {name})
+      return node("Token", start, {value})
     }
 
     if (tok.type === ":") {
