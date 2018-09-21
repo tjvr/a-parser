@@ -118,41 +118,30 @@ const lexer = moo.states({
   },
 })
 
-const source = `
+const metaGrammar = `
 
-Grammar -> "newline"* rules:Rules[] "newline"*
+grammar -> "newline"* rules:rules "newline"*
 
-Rules[] -> Rules[] "newline"* :Rule
-Rules[] ->
+rules [] -> []:rules "newline"+ :rule
+rules [] ->
 
-Rule -> name:Def "space" "->" "space" children:Symbols[] "space"?
+rule -> name:"identifier" type:"identifier"? "->" children:Symbols[]
 
-Def -> :Name
-Def -> :List
+def -> :Name
+def -> :List
 
-Symbols[] -> Symbols[] "space" :Symbol
-Symbols[] ->
+symbols [] -> []:symbols "space" :symbol
+symbols [] ->
 
-Symbol -> :Optional
-Symbol -> :OneOrMany
-Symbol -> :ZeroOrMany
+symbol Optional   -> atom:Atom "?"
+symbol OneOrMany  -> atom:Atom "+"
+symbol ZeroOrMany -> atom:Atom "*"
 
-Optional -> atom:Atom "?"
-OneOrMany -> atom:Atom "+"
-ZeroOrMany -> atom:Atom "*"
+atom Group -> "(" children:Symbols[] ")"
+atom Atom -> ((key:"identifier")? ":")? match:match
 
-Atom -> :Group
-Atom -> ((key:"identifier")? ":")? match:Match
-
-Group -> "(" children:Symbols[] ")"
-
-Match -> :Name
-Match -> :List
-Match -> :Token
-
-Name -> name:"identifier"
-List -> name:"name" "list"
-Token -> value:"string"
+match Name -> name:"identifier"
+match Token -> type:"string"
 
 `
 
@@ -355,28 +344,68 @@ function parse(buffer) {
 const example = `
 
 // Numbers
-N -> :"number"
-N -> :Call
+N -> ="number"
+N -> Call{ name="function" "(" args=args ")" }
 
-Call -> name:"function" arg:P
+args -> 
+args -> List{ rest=args last=N }
 
 // Parentheses
-P -> "(" :AS ")"
-P -> :N
+P -> "(" =AS ")"
+P -> =N
 
 // Exponents
-E -> left:P op:"^" right:E  {% BinOp %}
-E -> :P
+E -> BinOp{ left=P op="^" right=E }
+E -> =P
 
 // Mul / div
-MD -> left:MD op:"*" right:E  {% BinOp %}
-MD -> left:MD op:"/" right:E  {% BinOp %}
-MD -> :E
+MD -> Mul{ left=MD "*" right=E  }
+MD -> Div{ left=MD "/" right=E  }
+MD -> =E
 
 // Addition and subtraction
-AS -> left:AS op:"+" right:MD  {% BinOp %}
-AS -> left:AS op:"-" right:MD  {% BinOp %}
-AS -> MD
+AS -> Add{ left:AS "+" right:MD }
+AS -> Sub{ left:AS "-" right:MD }
+AS -> =MD
+
+`
+
+const program = `
+
+stmt -> :expr
+
+expr Let   -> "let" name:"iden" "=" value:expr "in" body:expr
+
+stmt If    -> "if" cond:expr iftrue:Block
+stmt If    -> "if" cond:expr iftrue:Block "else" iffalse:Block
+stmt While -> "while" cond:expr body:Block
+stmt Block -> "{" ";"* body:statements ";"* "}"
+
+statements [] -> []:statements ";"+ :stmt
+statements [] -> :stmt
+
+stmt Def -> "fun" name:"iden" args:"iden"* "=" body:expr
+
+args [] -> []:args :expr
+args [] ->
+
+expr Call -> func:expr arg:expr
+
+expr Literal -> value:"number"
+expr Literal -> value:"string"
+expr BoolLiteral -> value:"boolean"
+
+`
+
+const lisp = `
+
+program = expr+
+
+expr Quote = "'" list:List
+expr List = "(" items:expr+ ")"
+expr Atom = name:"identifier"
+expr Literal = value:"number"
+expr Literal = value:"string"
 
 `
 
@@ -387,7 +416,7 @@ for (let tok of lexer) {
 }
 */
 
-const tree = parse(example)
+const tree = parse(metaGrammar)
 console.log(tree.toString())
 //console.log(JSON.stringify(tree, null, 2))
 
