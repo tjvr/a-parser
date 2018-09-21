@@ -112,8 +112,9 @@ const lexer = moo.states({
   },
   shared: {
     list: "[]",
-    space: /[ \t\f\r\l]+/,
-    identifier: /[A-Za-z][A-Za-z0-9_-]+/,
+    space: /[ \t\f\r]+/,
+    identifier: /[A-Za-z][A-Za-z0-9_-]*/,
+    comment: /\/\/.*$/,
   },
 })
 
@@ -159,10 +160,12 @@ function parse(buffer) {
   lexer.reset(buffer)
 
   var tok
-  tok = lexer.next()
   function next() {
-    tok = lexer.next()
+    do {
+      tok = lexer.next()
+    } while (tok && tok.type === "comment")
   }
+  next()
 
   function syntaxError(message) {
       throw new Error(lexer.formatError(tok, message))
@@ -171,7 +174,11 @@ function parse(buffer) {
   function expect(expectedType, message) {
     if (tok.type !== expectedType) {
       if (!message) {
-        message = "Expected " + expectedType + " but found " + tok.type
+        if (tok.type === "error") {
+          message = "Invalid syntax (expected " + expectedType + ")"
+        } else {
+          message = "Expected " + expectedType + " but found " + tok.type
+        }
       }
       syntaxError(message)
     }
@@ -182,7 +189,7 @@ function parse(buffer) {
 
   function node(type, start, attrs) {
     const end = Pos.before(tok)
-    const region = new Region(start, end, buffer) 
+    const region = new Region(start, end, buffer)
     return new Node(type, region, attrs)
   }
 
@@ -336,7 +343,7 @@ function parse(buffer) {
     while (tok) {
       const rule = parseRule()
       rules.push(rule)
-      end = Pos.before(tok)
+      if (tok) { end = Pos.before(tok) }
       parseBlankLines()
     }
     return new Node("Grammar", new Region(start, end, buffer), {rules})
@@ -345,7 +352,42 @@ function parse(buffer) {
   return parseFile()
 }
 
-const tree = parse(source)
+const example = `
+
+// Numbers
+N -> :"number"
+N -> :Call
+
+Call -> name:"function" arg:P
+
+// Parentheses
+P -> "(" :AS ")"
+P -> :N
+
+// Exponents
+E -> left:P op:"^" right:E  {% BinOp %}
+E -> :P
+
+// Mul / div
+MD -> left:MD op:"*" right:E  {% BinOp %}
+MD -> left:MD op:"/" right:E  {% BinOp %}
+MD -> :E
+
+// Addition and subtraction
+AS -> left:AS op:"+" right:MD  {% BinOp %}
+AS -> left:AS op:"-" right:MD  {% BinOp %}
+AS -> MD
+
+`
+
+/*
+lexer.reset(example)
+for (let tok of lexer) {
+  console.log(tok.type, JSON.stringify(tok.value))
+}
+*/
+
+const tree = parse(example)
 console.log(tree.toString())
 //console.log(JSON.stringify(tree, null, 2))
 
