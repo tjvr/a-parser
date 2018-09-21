@@ -45,13 +45,19 @@ class Node {
     //s += nextIndent + "_text: " + JSON.stringify(this.region.text) + ",\n"
 
     const keys = Object.getOwnPropertyNames(this)
+
+    let hadKeys = false
     for (let key of keys) {
       const value = this[key]
       if (key === "type" || key === "region") continue
       s += ",\n" + nextIndent + key + ": "
       s += stringify(value, nextIndent)
+      hadKeys = true
     }
 
+    if (!hadKeys) {
+      return s + " }"
+    }
     return s + ",\n" + indent + "}"
   }
 }
@@ -98,27 +104,16 @@ class Pos {
 
 const moo = require('../moo/moo')
 
-const lexer = moo.states({
-  main: {
-    newline: {match: '\n', lineBreaks: true},
-    include: 'shared',
-    arrow: {match: '->', next: 'rule'},
-  },
-  rule: {
-    _op: {match: [":", "?", "*", "+", "(", ")"], type: x => x},
-    newline: {match: '\n', lineBreaks: true, next: 'main'},
-    string: {match: /"(?:\\["\\]|[^\n"\\])*"/, value: s => s.slice(1, -1)},
-    include: 'shared',
-  },
-  shared: {
-    list: "[]",
-    space: /[ \t\f\r]+/,
-    identifier: /[A-Za-z][A-Za-z0-9_-]*/,
-  },
-  $all: {
-    error: moo.error,
-    comment: /\/\/.*$/,
-  },
+const lexer = moo.compile({
+  newline: {match: '\n', lineBreaks: true},
+  _op: {match: [":", "?", "*", "+", "(", ")"], type: x => x},
+  arrow: '->',
+  list: "[]",
+  string: {match: /"(?:\\["\\]|[^\n"\\])*"/, value: s => s.slice(1, -1)},
+  space: /[ \t\f\r]+/,
+  identifier: /[A-Za-z][A-Za-z0-9_-]*/,
+  comment: /\/\/.*$/,
+  error: moo.error,
 })
 
 const metaGrammar = `
@@ -137,14 +132,12 @@ symbol Optional   -> atom:Atom "?"
 symbol OneOrMany  -> atom:Atom "+"
 symbol ZeroOrMany -> atom:Atom "*"
 
-//atom Group -> "(" children:symbols ")"
-atom       ->                      match:idenOrToken
-atom Root  ->                  ":" match:idenOrToken
-atom Key   ->       key:"list" ":" match:idenOrToken
-atom List  -> key:"identifier" ":" match:idenOrToken
+atom     ->             match:idenOrToken
+atom Key -> key:key ":" match:idenOrToken
 
-idenOrToken Name -> name:"identifier"
-idenOrToken Token -> type:"string"
+key Root ->
+key List -> "list"
+key Name -> name:"identifier"
 
 idenOrList Name -> name:"identifier"
 idenOrList List -> "list"
@@ -158,28 +151,28 @@ function parse(buffer) {
   function next() {
     do {
       tok = lexer.next()
-    } while (tok && (tok.type === "comment" || tok.type === "space"))
+    } while (tok && (tok.type === "comment"))
   }
   next()
 
   function syntaxError(message) {
-      throw new Error(lexer.formatError(tok, message))
+    if (tok.type === "error") {
+      message = "Invalid syntax"
+    }
+    throw new Error(lexer.formatError(tok, message))
   }
 
   function expect(expectedType, message) {
-    if (tok.type !== expectedType) {
-      if (!message) {
-        if (tok.type === "error") {
-          message = "Invalid syntax (expected " + expectedType + ")"
-        } else {
-          message = "Expected " + expectedType + " but found " + tok.type
-        }
-      }
-      syntaxError(message)
+    if (tok.type === expectedType) {
+      const found = tok
+      next()
+      return found
     }
-    const found = tok
-    next()
-    return found
+
+    if (!message) {
+      message = "Expected " + expectedType + " (found " + tok.type + ")"
+    }
+    syntaxError(message)
   }
 
   function node(type, start, attrs) {
@@ -200,11 +193,13 @@ function parse(buffer) {
 
     switch (tok.type) {
     case "identifier":
+      next()
       return node("Name", start, {name})
     case "string":
+      next()
       return node("Token", start, {name})
     default:
-      syntaxError("Expected value (found '" + tok.type + "')")
+      syntaxError("Expected value (found " + tok.type + ")")
     }
   }
 
@@ -214,12 +209,10 @@ function parse(buffer) {
     return node("Token", start, {value})
   }
 
-  function parseNamedAtom(key, start) {
+  function parseKey(start, key) {
     expect(":")
-
-    const value = parseValue()
-
-    return node("Key", start, {key, match: value})
+    const match = parseValue()
+    return node("Key", start, {key, match})
   }
 
   function parseIdentifierAtom() {
@@ -229,7 +222,8 @@ function parse(buffer) {
     if (tok.type !== ":") {
       return node("Name", start, {value})
     }
-    return parseNamedAtom(value, start)
+    const key = node("Name", start, {name: value})
+    return parseKey(start, key)
   }
 
   function parseAtom() {
@@ -240,10 +234,10 @@ function parse(buffer) {
     case "string":
       return parseSimpleToken()
     case ":":
-      return parseNamedAtom("_root_", start)
+      return parseKey(start, node("Root", null, {}))
     case "list":
       next()
-      return parseNamedAtom("_list_", start)
+      return parseKey(start, node("List", null, {}))
     case "identifier":
       return parseIdentifierAtom()
     default:
@@ -272,33 +266,46 @@ function parse(buffer) {
     return node(type, start, {atom})
   }
 
-  function parseParens() {
+  function parseNodeType() {
     const start = Pos.before(tok)
-    expect("(")
-    const children = []
-    while (tok && tok.type !== ")") {
-      const symbol = parseSymbol()
-      children.push(symbol)
+    const value = tok.value
+    switch (tok.type) {
+    case "identifier":
+      next()
+      return node("Name", start, {value})
+    case "list":
+      next()
+      return node("List", start, {value})
+    default:
+      syntaxError("Expected node type (found " + tok.type + ")")
     }
-    expect(")")
-    return node("Group", start, {children})
   }
-
-  // TODO enforce space separation in the tokenizer
 
   function parseRule() {
     const start = Pos.before(tok)
     const attrs = {}
     attrs.name = expect("identifier").value
-    if (tok.type === "identifier" || tok.type === "list") {
-      attrs.nodeType = tok.value
-      next()
+    expect("space")
+    if (tok.type !== "arrow") {
+      attrs.nodeType = parseNodeType()
+      expect("space")
     }
     expect("arrow")
+    expect("space")
     attrs.children = []
     while (tok && tok.type !== "newline") {
       const symbol = parseSymbol()
       attrs.children.push(symbol)
+
+      switch (tok.type) {
+      case "newline":
+        continue
+      case ":":
+        if (symbol.type === "Token" && tok.type === ":") {
+          syntaxError("Can't use token as key")
+        }
+      }
+      expect("space", "Expected space")
     }
     return new node("Rule", start, attrs)
   }
@@ -389,7 +396,11 @@ expr Literal -> value:"string"
 `
 
 const bad = `
-Bad -> : "foo""bar" cheese"Fish"
+Test -> foo :root []:list key:value "token" key:"value"
+
+bad Cheese -> foo:"bar" cheese:bar
+bad [] -> foo
+bad -> 
 `
 
 lexer.reset(bad)
