@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "test": "ava"
+  },
+  "devDependencies": {
+    "ava": "1.0.0-beta.8"
+  },
+  "dependencies": {
+    "moo": "git+https://git@github.com/no-context/moo.git"
+  }
+}
