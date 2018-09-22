@@ -60,6 +60,10 @@ class Node {
     }
     return s + ",\n" + indent + "}"
   }
+
+  formatError(message) {
+    return this.region.formatError(message)
+  }
 }
 
 class Region {
@@ -75,6 +79,31 @@ class Region {
 
   get text() {
     return this.buffer.slice(this.start.offset, this.end.offset)
+  }
+
+  get firstLine() {
+    const buffer = this.buffer
+    const offset = this.start.offset
+    let sol = buffer.lastIndexOf("\n", offset)
+    if (sol === -1) sol = 0
+    let eol = buffer.indexOf("\n", offset + 1)
+    if (eol === -1) eol = buffer.length
+    return buffer.slice(sol + 1, eol)
+  }
+
+  formatFirstLine(indent) {
+    indent = indent || ""
+    const line = this.firstLine
+    const endCol = this.end.line === this.start.line ? this.end.col : line.length
+    let message = indent + line + "\n"
+    message += indent + Array(this.start.col).join(" ") + Array(endCol - this.start.col + 1).join("^")
+    return message
+  }
+
+  formatError(message) {
+    message += " at line " + this.start.line + " col " + this.start.col + ":\n\n"
+    message += this.formatFirstLine("  ")
+    return message
   }
 }
 
