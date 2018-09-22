@@ -276,3 +276,9 @@ test("one or many name", t => {
   ])
 })
 
+test("multiple modifiers", t => {
+  const tree = parseGrammar(`foo -> bar+\nfoo -> bar?`)
+  const grammar = expandRules(tree.rules)
+  t.snapshot(grammar.rules)
+})
+
