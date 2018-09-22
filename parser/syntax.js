@@ -195,8 +195,11 @@ function parseGrammar(buffer) {
       expect("space")
     }
     expect("arrow")
-    expect("space")
     attrs.children = []
+    if (!tok || tok.type === "newline") {
+      return new node("Rule", start, attrs)
+    }
+    expect("space")
     while (tok && tok.type !== "newline") {
       const symbol = parseSymbol()
       attrs.children.push(symbol)

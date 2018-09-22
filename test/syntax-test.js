@@ -49,6 +49,7 @@ test('parses rule', t => {
 test('handles EOF', t => {
   parseGrammar(`foo -> bar`)
   parseGrammar(`foo -> "quxx"`)
+  parseGrammar(`foo ->`)
   t.throws(() => parseGrammar(`foo -> bar:`), null, "Expected value")
 })
 

@@ -14,8 +14,13 @@ function buildRootType(children) {
       continue
     }
 
-    if (child.key.type !== "Root") {
-      semanticError(child, "Non-root child in rule without node type")
+    switch (child.key.type) {
+    case "List":
+      semanticError(child, "List child in non-list rule")
+    case "Root":
+      break // continue
+    default:
+      semanticError(child, "Named child in rule without node type")
     }
 
     if (rootIndex !== -1) {
@@ -30,10 +35,46 @@ function buildRootType(children) {
   return {type: "root", index: rootIndex}
 }
 
+function buildListType(children) {
+  const nodeType = {type: "list"}
+
+  for (var i = 0; i < children.length; i++) {
+    const child = children[i]
+    if (child.type !== "Key") {
+      continue
+    }
+
+    switch (child.key.type) {
+    case "Root":
+      if (nodeType.rootIndex !== undefined) {
+        semanticError(child, "Multiple root children")
+      }
+      nodeType.rootIndex = i
+      break
+
+    case "List":
+      if (nodeType.listIndex !== undefined) {
+        semanticError(child, "Multiple list children")
+      }
+      nodeType.listIndex = i
+      break
+
+    default:
+      semanticError(child, "Named child in list rule")
+    }
+  }
+
+  return nodeType
+}
+
 function buildType(rule) {
   assert.equal(rule.type, "Rule")
-  if (!rule.nodeType) {
+  const type = rule.nodeType ? rule.nodeType.type : "Object"
+  switch (type) {
+  case "Object":
     return buildRootType(rule.children)
+  case "List":
+    return buildListType(rule.children)
   }
 }
 
