@@ -117,32 +117,66 @@ function buildType(rule) {
 function expandOptional(child, grammar) {
   child = buildChild(child)
 
-  let name = child.name + "?"
+  let ruleName = child.name + "?"
   if (child.type === "token") {
-    name = "%" + name
+    ruleName = "%" + ruleName
   } else {
     assert.equal(child.type, "name")
   }
+  const result = {type: "name", name: ruleName}
 
-  const result = {type: "name", name}
-
-  if (grammar.get(name)) {
+  if (grammar.get(ruleName)) {
     return result
   }
 
   grammar.add({
-    name,
+    name: ruleName,
     type: "root",
     rootIndex: 0,
     children: [child],
   })
   grammar.add({
-    name,
+    name: ruleName,
     type: "null",
     children: [],
   })
   return result
 }
+
+function expandRepeat(child, baseCase, grammar) {
+  child = buildChild(child)
+
+  let ruleName = child.name + (baseCase ? "+" : "*")
+  if (child.type === "token") {
+    ruleName = "%" + ruleName
+  } else {
+    assert.equal(child.type, "name")
+  }
+  const result = {type: "name", name: ruleName}
+
+  if (grammar.get(ruleName)) {
+    return result
+  }
+
+  grammar.add({
+    name: ruleName,
+    type: "list",
+    rootIndex: baseCase ? 0 : undefined,
+    children: baseCase ? [child] : [],
+  })
+  grammar.add({
+    name: ruleName,
+    type: "list",
+    listIndex: 0,
+    rootIndex: 1,
+    children: [
+      {type: "name", name: ruleName},
+      child,
+    ],
+  })
+  return result
+}
+
 
 function expandChild(child, grammar) {
   switch (child.type) {

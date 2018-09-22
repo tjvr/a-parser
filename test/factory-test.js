@@ -243,3 +243,36 @@ test("generates optionals only once", t => {
     },
   ])
 })
+
+test("one or many name", t => {
+  const rule = parseRule(t, `foo -> bar+`)
+  const grammar = expandRules([rule])
+  t.deepEqual(grammar.rules, [
+    {
+      name: "bar+",
+      type: "list",
+      rootIndex: 0,
+      children: [
+        {type: 'name', name: 'bar'},
+      ],
+    },
+    {
+      name: "bar+",
+      type: "list",
+      listIndex: 0,
+      rootIndex: 1,
+      children: [
+        {type: 'name', name: 'bar+'},
+        {type: 'name', name: 'bar'},
+      ],
+    },
+    {
+      name: "foo",
+      type: "null",
+      children: [
+        {type: 'name', name: 'bar+'},
+      ],
+    },
+  ])
+})
+
