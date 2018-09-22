@@ -1,6 +1,6 @@
 
 const { parseGrammar } = require('./parser/syntax')
-const { buildRule } = require('./parser/factory')
+const { expandRules } = require('./parser/factory')
 
 const example = `
 
@@ -60,7 +60,7 @@ expr BoolLiteral -> value:"boolean"
 
 const lisp = `
 
-program -> expr+
+program -> :expr+
 
 expr Quote -> "'" list:List
 expr List -> "(" items:expr+ ")"
@@ -70,10 +70,17 @@ expr Literal -> value:"string"
 
 `
 
-const grammar = parseGrammar(lisp)
-console.log(grammar.toString())
+const tree = parseGrammar(program)
+console.log(tree.toString())
+console.log()
+const grammar = expandRules(tree.rules)
 for (let rule of grammar.rules) {
-  console.log(buildRule(rule))
+  console.log(rule.name + " -> " + rule.children.map(x => x.name).join(" "))
+  if (rule.type === 'object') {
+    console.log(rule.object + " { " + Object.keys(rule.keys).join(", ") + " }")
+  } else if (rule.type === 'root') {
+    console.log("select " + rule.rootIndex)
+  }
+  console.log()
 }
-//console.log(JSON.stringify(tree, null, 2))
 
