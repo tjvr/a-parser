@@ -1,6 +1,8 @@
 
 const assert = require('assert')
 
+const hasOwnProperty = Object.prototype.hasOwnProperty
+
 function semanticError(node, message) {
   throw new Error(node.formatError(message))
 }
@@ -67,14 +69,47 @@ function buildListType(children) {
   return nodeType
 }
 
+function buildObjectType(name, children) {
+  const keys = {}
+
+  for (var i = 0; i < children.length; i++) {
+    const child = children[i]
+    if (child.type !== "Key") {
+      continue
+    }
+
+    switch (child.key.type) {
+    case "Root":
+      semanticError(child, "Root child in object rule")
+    case "List":
+      semanticError(child, "List child in object rule")
+    case "Name":
+      break // continue
+    default:
+      assert.fail("Unknown Key type")
+    }
+
+    const key = child.key.name
+
+    if (hasOwnProperty.call(keys, key)) {
+      semanticError(child.key, "Duplicate name '" + key + "'")
+    }
+    keys[key] = i
+  }
+
+  return {type: "object", object: name, keys}
+}
+
 function buildType(rule) {
   assert.equal(rule.type, "Rule")
-  const type = rule.nodeType ? rule.nodeType.type : "Object"
+  const type = rule.nodeType ? rule.nodeType.type : "Default"
   switch (type) {
-  case "Object":
+  case "Default":
     return buildRootType(rule.children)
   case "List":
     return buildListType(rule.children)
+  case "Name":
+    return buildObjectType(rule.nodeType.value, rule.children)
   }
 }
 

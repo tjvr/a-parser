@@ -68,5 +68,30 @@ test("warns for multiple root children in list rule", t => {
   t.throws(t => buildType(rule), /^Multiple root children/)
 })
 
+test("object type", t => {
+  const rule = parseRule(t, `expr Add -> left:expr "+" right:expr`)
+  t.deepEqual(buildType(rule), {
+    type: "object",
+    object: "Add",
+    keys: {
+      left: 0,
+      right: 2,
+    },
+  })
+})
 
+test("warns for duplicate keys", t => {
+  const rule = parseRule(t, `foo Obj -> bar:x bar:x`)
+  t.throws(t => buildType(rule), /^Duplicate name 'bar'/)
+})
+
+test("warns for root children in object rule", t => {
+  const rule = parseRule(t, `foo Obj -> :x`)
+  t.throws(t => buildType(rule), /^Root child in object rule/)
+})
+
+test("warns for list children in object rule", t => {
+  const rule = parseRule(t, `foo Obj -> []:x`)
+  t.throws(t => buildType(rule), /^List child in object rule/)
+})
 
