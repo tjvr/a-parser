@@ -22,7 +22,11 @@ grammar -> "newline"* rules:rules "newline"*
 rules [] -> []:rules "newline"+ :rule
 rules [] ->
 
-rule -> name:"identifier" type:idenOrList? "->" children:symbols
+rule -> name:"identifier" type:nodeType "->" children:symbols
+
+nodeType ->
+nodeType Name -> name:"identifier"
+nodeType List -> "list"
 
 symbols [] -> []:symbols "space" :symbol
 symbols [] ->
@@ -37,9 +41,6 @@ atom Key -> key:key ":" match:idenOrToken
 key Root ->
 key List -> "list"
 key Name -> name:"identifier"
-
-idenOrList Name -> name:"identifier"
-idenOrList List -> "list"
 
 `
 

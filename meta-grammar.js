@@ -2,29 +2,29 @@
 const example = `
 
 // Numbers
-N -> ="number"
-N -> Call{ name="function" "(" args=args ")" }
+N -> :"number"
+N -> name:"function" "(" args:args ")"
 
 args -> 
-args -> List{ rest=args last=N }
+args -> List{ rest:args last:N }
 
 // Parentheses
-P -> "(" =AS ")"
-P -> =N
+P -> "(" :AS ")"
+P -> :N
 
 // Exponents
-E -> BinOp{ left=P op="^" right=E }
-E -> =P
+E BinOp -> left:P op:"^" right:E
+E -> :P
 
 // Mul / div
-MD -> Mul{ left=MD "*" right=E  }
-MD -> Div{ left=MD "/" right=E  }
-MD -> =E
+MD BinOp -> left:MD op:"*" right:E
+MD BinOp -> left:MD op:"/" right:E
+MD -> :E
 
 // Addition and subtraction
-AS -> Add{ left:AS "+" right:MD }
-AS -> Sub{ left:AS "-" right:MD }
-AS -> =MD
+AS BinOp -> left:AS "+" right:MD
+AS BinOp -> left:AS "-" right:MD
+AS -> :MD
 
 `
 
