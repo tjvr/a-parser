@@ -84,11 +84,10 @@ class Region {
   get firstLine() {
     const buffer = this.buffer
     const offset = this.start.offset
-    let sol = buffer.lastIndexOf("\n", offset)
-    if (sol === -1) sol = 0
+    let sol = offset === 0 ? 0 : buffer.lastIndexOf("\n", offset) + 1
     let eol = buffer.indexOf("\n", offset + 1)
     if (eol === -1) eol = buffer.length
-    return buffer.slice(sol + 1, eol)
+    return buffer.slice(sol, eol)
   }
 
   formatFirstLine(indent) {

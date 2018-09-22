@@ -3,7 +3,7 @@ const test = require('ava')
 
 const {Node, Pos, Region} = require('../parser/node')
 
-test('formats regions', t => {
+test('formats region', t => {
   const region = new Region(
     new Pos(2, 8, 15),
     new Pos(2, 11, 18),
@@ -16,7 +16,20 @@ test('formats regions', t => {
   )
 })
 
-test('formats errors', t => {
+test('formats region at end', t => {
+  const region = new Region(
+    new Pos(1, 21, 20),
+    new Pos(1, 26, 25),
+    'foo -> "(" :bar ")" :quxx',
+  )
+
+  t.is(region.formatFirstLine(),
+    'foo -> "(" :bar ")" :quxx\n' +
+    "                    ^^^^^"
+  )
+})
+
+test('formats region error', t => {
   const region = new Region(
     new Pos(2, 8, 15),
     new Pos(2, 11, 18),
