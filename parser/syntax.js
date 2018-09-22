@@ -72,7 +72,8 @@ function parseGrammar(buffer) {
     }
 
     if (!message) {
-      message = "Expected " + expectedType + " (found " + tok.type + ")"
+      message = "Expected " + expectedType
+      if (tok) message += " (found " + tok.type + ")"
     }
     syntaxError(message)
   }
@@ -121,11 +122,11 @@ function parseGrammar(buffer) {
     const start = Pos.before(tok)
     const value = expect("identifier").value
 
-    if (tok.type !== ":") {
-      return node("Name", start, {value})
+    if (tok && tok.type === ":") {
+      const key = node("Name", start, {name: value})
+      return parseKey(start, key)
     }
-    const key = node("Name", start, {name: value})
-    return parseKey(start, key)
+    return node("Name", start, {value})
   }
 
   function parseAtom() {

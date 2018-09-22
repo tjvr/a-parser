@@ -46,8 +46,14 @@ test('parses rule', t => {
   t.is(child.match.name, "quxx")
 })
 
+test('handles EOF', t => {
+  parseGrammar(`foo -> bar`)
+  parseGrammar(`foo -> "quxx"`)
+  t.throws(() => parseGrammar(`foo -> bar:`), null, "Expected value")
+})
+
 test('throws if key is a token', t => {
-  t.throws(() => parseGrammar(`r -> "quxx":`), /Can't use token as key/)
+  t.throws(() => parseGrammar(`r -> "quxx":`), null, "Can't use token as key")
 })
 
 test('requires spaces around values', t => {
