@@ -2,7 +2,7 @@
 const test = require('ava')
 
 const { parseGrammar } = require('../parser/syntax')
-const { buildType } = require('../parser/factory')
+const { buildType, buildRule } = require('../parser/factory')
 
 function parseRule(t, source) {
   const grammar = parseGrammar(source)
@@ -20,7 +20,7 @@ test("null type", t => {
 
 test("root type", t => {
   const rule = parseRule(t, `foo -> "(" :bar ")"`)
-  t.deepEqual(buildType(rule), {type: "root", index: 1})
+  t.deepEqual(buildType(rule), {type: "root", rootIndex: 1})
 })
 
 test("warns for multiple root children", t => {
@@ -95,3 +95,61 @@ test("warns for list children in object rule", t => {
   t.throws(t => buildType(rule), /^List child in object rule/)
 })
 
+test("builds null rule", t => {
+  const rule = parseRule(t, `foo -> bar "quxx"`)
+  t.deepEqual(buildRule(rule), {
+    name: "foo",
+    type: "null",
+    children: [
+      {type: 'name', name: 'bar'},
+      {type: 'token', token: 'quxx'},
+    ],
+  })
+})
+
+test("builds root rule", t => {
+  const rule = parseRule(t, `foo -> "(" :bar ")"`)
+  t.deepEqual(buildRule(rule), {
+    name: "foo",
+    type: "root",
+    rootIndex: 1,
+    children: [
+      {type: 'token', token: '('},
+      {type: 'name', name: 'bar'},
+      {type: 'token', token: ')'},
+    ],
+  })
+})
+
+test("builds object rule", t => {
+  const rule = parseRule(t, `expr Add -> left:expr "+" right:expr`)
+  t.deepEqual(buildRule(rule), {
+    name: "expr",
+    type: "object",
+    object: "Add",
+    keys: {
+      left: 0,
+      right: 2,
+    },
+    children: [
+      {type: 'name', name: 'expr'},
+      {type: 'token', token: '+'},
+      {type: 'name', name: 'expr'},
+    ],
+  })
+})
+
+test("builds list rule", t => {
+  const rule = parseRule(t, `xl [] -> []:xl "," :x`)
+  t.deepEqual(buildRule(rule), {
+    name: "xl",
+    type: "list",
+    rootIndex: 2,
+    listIndex: 0,
+    children: [
+      {type: 'name', name: 'xl'},
+      {type: 'token', token: ','},
+      {type: 'name', name: 'x'},
+    ],
+  })
+})

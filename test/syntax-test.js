@@ -27,10 +27,18 @@ test('lexes rule', t => {
   ])
 })
 
+function parseRule(t, source) {
+  const grammar = parseGrammar(source)
+  t.is(grammar.type, "Grammar")
+  t.is(grammar.rules.length, 1)
+  const rule = grammar.rules[0]
+  t.is(rule.type, "Rule")
+  return rule
+}
+
 test('parses rule', t => {
   const tree = parseGrammar(`foo [] -> bar:"quxx"`)
   t.snapshot(tree)
-
   t.is(tree.type, "Grammar")
 
   const rule = tree.rules[0]
@@ -44,6 +52,12 @@ test('parses rule', t => {
   t.is(child.key.name, "bar")
   t.is(child.match.type, "Token")
   t.is(child.match.name, "quxx")
+})
+
+test('parses plain name', t => {
+  const rule = parseRule(t, `foo -> bar`)
+  t.is(rule.children[0].type, "Name")
+  t.is(rule.children[0].name, "bar")
 })
 
 test('handles EOF', t => {

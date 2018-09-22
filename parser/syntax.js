@@ -127,7 +127,7 @@ function parseGrammar(buffer) {
       const key = node("Name", start, {name: value})
       return parseKey(start, key)
     }
-    return node("Name", start, {value})
+    return node("Name", start, {name: value})
   }
 
   function parseAtom() {

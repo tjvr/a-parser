@@ -34,7 +34,7 @@ function buildRootType(children) {
   if (rootIndex === -1) {
     return {type: "null"}
   }
-  return {type: "root", index: rootIndex}
+  return {type: "root", rootIndex}
 }
 
 function buildListType(children) {
@@ -113,4 +113,33 @@ function buildType(rule) {
   }
 }
 
-module.exports = {buildType}
+function buildRule(rule) {
+  const info = buildType(rule)
+  info.name = rule.name
+  info.children = []
+
+  for (let child of rule.children) {
+    if (child.type === "Key") {
+      child = child.match
+    }
+    switch (child.type) {
+    case "Token":
+      info.children.push({
+        type: "token",
+        token: child.value,
+      })
+      break
+    case "Name":
+      info.children.push({
+        type: "name",
+        name: child.name,
+      })
+      break
+    default:
+      assert.fail("Unexpected child type")
+    }
+  }
+  return info
+}
+
+module.exports = {buildType, buildRule}
