@@ -1,7 +1,8 @@
 
 const assert = require('assert')
-
 const hasOwnProperty = Object.prototype.hasOwnProperty
+
+const {Grammar} = require('./grammar')
 
 function semanticError(node, message) {
   throw new Error(node.formatError(message))
@@ -113,33 +114,93 @@ function buildType(rule) {
   }
 }
 
-function buildRule(rule) {
-  const info = buildType(rule)
-  info.name = rule.name
-  info.children = []
+function expandOptional(child, grammar) {
+  child = buildChild(child)
 
-  for (let child of rule.children) {
-    if (child.type === "Key") {
-      child = child.match
-    }
-    switch (child.type) {
-    case "Token":
-      info.children.push({
-        type: "token",
-        token: child.value,
-      })
-      break
-    case "Name":
-      info.children.push({
-        type: "name",
-        name: child.name,
-      })
-      break
-    default:
-      assert.fail("Unexpected child type")
-    }
+  let name = child.name + "?"
+  if (child.type === "token") {
+    name = "%" + name
+  } else {
+    assert.equal(child.type, "name")
   }
-  return info
+
+
+  grammar.add({
+    name,
+    type: "root",
+    rootIndex: 0,
+    children: [child],
+  })
+  grammar.add({
+    name,
+    type: "null",
+    children: [],
+  })
+
+  return {
+    type: "name",
+    name,
+  }
 }
 
-module.exports = {buildType, buildRule}
+function expandChild(child, grammar) {
+  switch (child.type) {
+  case "OneOrMany":
+    return expandRepeat(child.atom, 1, grammar)
+  case "ZeroOrMany":
+    return expandRepeat(child.atom, 0, grammar)
+  case "Optional":
+    return expandOptional(child.atom, grammar)
+  default:
+    return buildChild(child)
+  }
+}
+
+function buildChild(child) {
+  switch (child.type) {
+  case "Token":
+    return {
+      type: "token",
+      name: child.name,
+    }
+  case "Name":
+    return {
+      type: "name",
+      name: child.name,
+    }
+  default:
+    assert.fail("Unexpected child type")
+  }
+}
+
+function expandRules(rules) {
+  const grammar = new Grammar()
+
+  for (let rule of rules) {
+    const name = rule.name
+    const nodeType = buildType(rule)
+    const children = []
+
+    for (let child of rule.children) {
+      if (child.type === "Key") {
+        child = child.match
+      }
+
+      child = expandChild(child, grammar)
+
+      children.push(child)
+    }
+
+    const info = {
+      name: rule.name,
+      ...nodeType,
+      children,
+    }
+
+    grammar.add(info)
+  }
+
+  return grammar
+}
+
+module.exports = {buildType, expandRules}

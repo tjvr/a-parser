@@ -1,4 +1,7 @@
 
+const { parseGrammar } = require('./parser/syntax')
+const { buildRule } = require('./parser/factory')
+
 const example = `
 
 // Numbers
@@ -67,21 +70,10 @@ expr Literal -> value:"string"
 
 `
 
-const bad = `
-Test -> foo :root []:list key:value "token" key:"value"
-
-bad Cheese -> foo:"bar" cheese:bar
-bad [] -> foo
-bad -> 
-`
-
-lexer.reset(bad)
-for (let tok of lexer) {
-  console.log(tok.type, JSON.stringify(tok.value))
+const grammar = parseGrammar(lisp)
+console.log(grammar.toString())
+for (let rule of grammar.rules) {
+  console.log(buildRule(rule))
 }
-console.log()
-
-const tree = parse(bad)
-console.log(tree.toString())
 //console.log(JSON.stringify(tree, null, 2))
 

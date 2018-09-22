@@ -2,7 +2,7 @@
 const test = require('ava')
 
 const { parseGrammar } = require('../parser/syntax')
-const { buildType, buildRule } = require('../parser/factory')
+const { buildType, expandRules } = require('../parser/factory')
 
 function parseRule(t, source) {
   const grammar = parseGrammar(source)
@@ -11,6 +11,12 @@ function parseRule(t, source) {
   const rule = grammar.rules[0]
   t.is(rule.type, "Rule")
   return rule
+}
+
+function expandOneRule(t, rule) {
+  const grammar = expandRules([rule])
+  t.is(grammar.rules.length, 1)
+  return grammar.rules[0]
 }
 
 test("null type", t => {
@@ -97,33 +103,33 @@ test("warns for list children in object rule", t => {
 
 test("builds null rule", t => {
   const rule = parseRule(t, `foo -> bar "quxx"`)
-  t.deepEqual(buildRule(rule), {
+  t.deepEqual(expandOneRule(t, rule), {
     name: "foo",
     type: "null",
     children: [
       {type: 'name', name: 'bar'},
-      {type: 'token', token: 'quxx'},
+      {type: 'token', name: 'quxx'},
     ],
   })
 })
 
 test("builds root rule", t => {
   const rule = parseRule(t, `foo -> "(" :bar ")"`)
-  t.deepEqual(buildRule(rule), {
+  t.deepEqual(expandOneRule(t, rule), {
     name: "foo",
     type: "root",
     rootIndex: 1,
     children: [
-      {type: 'token', token: '('},
+      {type: 'token', name: '('},
       {type: 'name', name: 'bar'},
-      {type: 'token', token: ')'},
+      {type: 'token', name: ')'},
     ],
   })
 })
 
 test("builds object rule", t => {
   const rule = parseRule(t, `expr Add -> left:expr "+" right:expr`)
-  t.deepEqual(buildRule(rule), {
+  t.deepEqual(expandOneRule(t, rule), {
     name: "expr",
     type: "object",
     object: "Add",
@@ -133,7 +139,7 @@ test("builds object rule", t => {
     },
     children: [
       {type: 'name', name: 'expr'},
-      {type: 'token', token: '+'},
+      {type: 'token', name: '+'},
       {type: 'name', name: 'expr'},
     ],
   })
@@ -141,15 +147,43 @@ test("builds object rule", t => {
 
 test("builds list rule", t => {
   const rule = parseRule(t, `xl [] -> []:xl "," :x`)
-  t.deepEqual(buildRule(rule), {
+  t.deepEqual(expandOneRule(t, rule), {
     name: "xl",
     type: "list",
     rootIndex: 2,
     listIndex: 0,
     children: [
       {type: 'name', name: 'xl'},
-      {type: 'token', token: ','},
+      {type: 'token', name: ','},
       {type: 'name', name: 'x'},
     ],
   })
+})
+
+test("optional name", t => {
+  const rule = parseRule(t, `foo -> :bar?`)
+  const grammar = expandRules([rule])
+  t.deepEqual(grammar.rules, [
+    {
+      name: "bar?",
+      type: "root",
+      rootIndex: 0,
+      children: [
+        {type: 'name', name: 'bar'},
+      ],
+    },
+    {
+      name: "bar?",
+      type: "null",
+      children: [],
+    },
+    {
+      name: "foo",
+      type: "root",
+      rootIndex: 0,
+      children: [
+        {type: 'name', name: 'bar?'},
+      ],
+    },
+  ])
 })
