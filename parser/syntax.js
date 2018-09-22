@@ -5,7 +5,7 @@ const {Node, Pos, Region} = require('./node')
 
 const metaLexer = moo.compile({
   newline: {match: '\n', lineBreaks: true},
-  _op: {match: [":", "?", "*", "+", "(", ")"], type: x => x},
+  _op: {match: [":", "?", "*", "+"], type: x => x},
   arrow: '->',
   list: "[]",
   string: {match: /"(?:\\["\\]|[^\n"\\])*"/, value: s => s.slice(1, -1)},
@@ -22,25 +22,28 @@ grammar -> "newline"* rules:rules "newline"*
 rules [] -> []:rules "newline"+ :rule
 rules [] ->
 
-rule -> name:"identifier" type:nodeType "->" children:symbols
+rule -> name:"identifier" type:nodeType "->" children:children
 
 nodeType ->
 nodeType Name -> name:"identifier"
 nodeType List -> "list"
 
-symbols [] -> []:symbols "space" :symbol
-symbols [] ->
+children [] -> []:children "space" :child
+children [] ->
 
-symbol Optional   -> atom:Atom "?"
-symbol OneOrMany  -> atom:Atom "+"
-symbol ZeroOrMany -> atom:Atom "*"
-
-atom     ->             match:idenOrToken
-atom Key -> key:key ":" match:idenOrToken
+child     ->             match:symbol
+child Key -> key:key ":" match:symbol
 
 key Root ->
 key List -> "list"
 key Name -> name:"identifier"
+
+symbol Optional   -> atom:match "?"
+symbol OneOrMany  -> atom:match "+"
+symbol ZeroOrMany -> atom:match "*"
+
+match Token -> name:"string"
+match Name  -> name:"identifier"
 
 `
 
@@ -65,18 +68,19 @@ function parseGrammar(buffer) {
     throw new Error(metaLexer.formatError(tok, message))
   }
 
+  function expectError(expected) {
+    const message = "Expected " + expected
+    if (tok) message += " (found " + tok.type + ")"
+    syntaxError(message)
+  }
+
   function expect(expectedType, message) {
     if (tok && tok.type === expectedType) {
       const found = tok
       next()
       return found
     }
-
-    if (!message) {
-      message = "Expected " + expectedType
-      if (tok) message += " (found " + tok.type + ")"
-    }
-    syntaxError(message)
+    expectError(expectedType)
   }
 
   function node(type, start, attrs) {
@@ -103,19 +107,21 @@ function parseGrammar(buffer) {
       next()
       return node("Token", start, {name})
     default:
-      syntaxError("Expected value (found " + tok.type + ")")
+      expectError("value")
     }
   }
 
   function parseSimpleToken() {
     const start = Pos.before(tok)
-    const value = expect("string").value
-    return node("Token", start, {value})
+    const name = expect("string").value
+    const atom = node("Token", start, {name})
+    return parseModifier(atom, start)
   }
 
   function parseKey(start, key) {
     expect(":")
-    const match = parseValue()
+    const value = parseValue()
+    const match = parseModifier(value, start)
     return node("Key", start, {key, match})
   }
 
@@ -127,14 +133,13 @@ function parseGrammar(buffer) {
       const key = node("Name", start, {name: value})
       return parseKey(start, key)
     }
-    return node("Name", start, {name: value})
+    const atom = node("Name", start, {name: value})
+    return parseModifier(atom, start)
   }
 
   function parseAtom() {
     const start = Pos.before(tok)
     switch (tok.type) {
-    case "(":
-      return parseParens()
     case "string":
       return parseSimpleToken()
     case ":":
@@ -145,13 +150,11 @@ function parseGrammar(buffer) {
     case "identifier":
       return parseIdentifierAtom()
     default:
-      syntaxError("Expected value (found '" + tok.type + "')")
+      expectError("value")
     }
   }
 
-  function parseSymbol() {
-    const start = Pos.before(tok)
-    const atom = parseAtom()
+  function parseModifier(atom, start) {
     let type
     switch (tok && tok.type) {
     case "+":
@@ -201,7 +204,7 @@ function parseGrammar(buffer) {
     }
     expect("space")
     while (tok && tok.type !== "newline") {
-      const symbol = parseSymbol()
+      const symbol = parseAtom()
       attrs.children.push(symbol)
 
       if (!tok || tok.type === "newline") {

@@ -60,6 +60,45 @@ test('parses plain name', t => {
   t.is(rule.children[0].name, "bar")
 })
 
+test('parses plain token', t => {
+  const rule = parseRule(t, `foo -> "quxx"`)
+  t.is(rule.children[0].type, "Token")
+  t.is(rule.children[0].name, "quxx")
+})
+
+test('parses key', t => {
+  const rule = parseRule(t, `foo -> bar:"quxx"`)
+  t.is(rule.children[0].type, "Key")
+  t.is(rule.children[0].key.type, "Name")
+  t.is(rule.children[0].key.name, "bar")
+  t.is(rule.children[0].match.type, "Token")
+  t.is(rule.children[0].match.name, "quxx")
+})
+
+test('parses name modifier', t => {
+  const rule = parseRule(t, `foo -> bar?`)
+  t.is(rule.children[0].type, "Optional")
+  t.is(rule.children[0].atom.type, "Name")
+  t.is(rule.children[0].atom.name, "bar")
+})
+
+test('parses token modifier', t => {
+  const rule = parseRule(t, `foo -> "quxx"?`)
+  t.is(rule.children[0].type, "Optional")
+  t.is(rule.children[0].atom.type, "Token")
+  t.is(rule.children[0].atom.name, "quxx")
+})
+
+test('parses key modifier', t => {
+  const rule = parseRule(t, `foo -> bar:"quxx"?`)
+  t.is(rule.children[0].type, "Key")
+  t.is(rule.children[0].key.type, "Name")
+  t.is(rule.children[0].key.name, "bar")
+  t.is(rule.children[0].match.type, "Optional")
+  t.is(rule.children[0].match.atom.type, "Token")
+  t.is(rule.children[0].match.atom.name, "quxx")
+})
+
 test('handles EOF', t => {
   parseGrammar(`foo -> bar`)
   parseGrammar(`foo -> "quxx"`)
