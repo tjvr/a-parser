@@ -187,3 +187,59 @@ test("optional name", t => {
     },
   ])
 })
+
+test("optional token", t => {
+  const rule = parseRule(t, `foo -> :"quxx"?`)
+  const grammar = expandRules([rule])
+  t.deepEqual(grammar.rules, [
+    {
+      name: "%quxx?",
+      type: "root",
+      rootIndex: 0,
+      children: [
+        {type: 'token', name: 'quxx'},
+      ],
+    },
+    {
+      name: "%quxx?",
+      type: "null",
+      children: [],
+    },
+    {
+      name: "foo",
+      type: "root",
+      rootIndex: 0,
+      children: [
+        {type: 'name', name: '%quxx?'},
+      ],
+    },
+  ])
+})
+
+test("generates optionals only once", t => {
+  const rule = parseRule(t, `foo -> bar? bar?`)
+  const grammar = expandRules([rule])
+  t.deepEqual(grammar.rules, [
+    {
+      name: "bar?",
+      type: "root",
+      rootIndex: 0,
+      children: [
+        {type: 'name', name: 'bar'},
+      ],
+    },
+    {
+      name: "bar?",
+      type: "null",
+      children: [],
+    },
+    {
+      name: "foo",
+      type: "null",
+      children: [
+        {type: 'name', name: 'bar?'},
+        {type: 'name', name: 'bar?'},
+      ],
+    },
+  ])
+})

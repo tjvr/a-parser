@@ -124,6 +124,11 @@ function expandOptional(child, grammar) {
     assert.equal(child.type, "name")
   }
 
+  const result = {type: "name", name}
+
+  if (grammar.get(name)) {
+    return result
+  }
 
   grammar.add({
     name,
@@ -136,11 +141,7 @@ function expandOptional(child, grammar) {
     type: "null",
     children: [],
   })
-
-  return {
-    type: "name",
-    name,
-  }
+  return result
 }
 
 function expandChild(child, grammar) {
