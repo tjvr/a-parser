@@ -14,7 +14,7 @@ const metaLexer = moo.compile({
   error: moo.error,
 })
 
-const metaGrammar = `
+const metaGrammarSource = `
 
 grammar -> "newline"* rules:rules "newline"*
 
@@ -236,4 +236,4 @@ function parseGrammar(buffer) {
   return parseFile()
 }
 
-module.exports = { parseGrammar, metaLexer, metaGrammar }
+module.exports = { parseGrammar, metaLexer, metaGrammarSource }

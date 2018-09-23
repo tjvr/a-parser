@@ -7,6 +7,7 @@
   "devDependencies": {
     "ava": "1.0.0-beta.8",
     "lint-staged": "^7.3.0",
+    "nearley": "^2.15.1",
     "pre-commit": "^1.2.2",
     "prettier": "^1.14.3"
   },
