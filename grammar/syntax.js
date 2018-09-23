@@ -16,21 +16,27 @@ const metaLexer = moo.compile({
 
 const metaGrammarSource = `
 
-grammar -> "newline"* rules:rules "newline"*
+grammar Grammar -> blankLines rules:rules blankLines
 
-rules [] -> []:rules "newline"+ :rule
+blankLines ->
+blankLines -> blankLines "newline"
+
+rules [] -> []:rules "newline" blankLines :rule
 rules [] ->
 
-rule -> name:"identifier" type:nodeType "->" children:children
+rule Rule -> name:"identifier" type:nodeType "arrow" children:children optionalSpace
 
-nodeType ->
-nodeType Name -> name:"identifier"
-nodeType List -> "list"
+optionalSpace -> "space"
+optionalSpace ->
+
+nodeType      -> "space"
+nodeType Name -> "space" name:"identifier" "space"
+nodeType List -> "space" "list" "space"
 
 children [] -> []:children "space" :child
 children [] ->
 
-child     ->             match:symbol
+child     ->                  :symbol
 child Key -> key:key ":" match:symbol
 
 key Root ->

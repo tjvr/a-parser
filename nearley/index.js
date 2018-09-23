@@ -48,14 +48,13 @@ function compileRootProcessor(index) {
 
 function compileObjectProcessor(type, keyIndexes) {
   let source = ""
-  source += "return {\n"
-  source += "type: " + JSON.stringify(type) + ",\n"
+  source += "return new Node(" + JSON.stringify(type) + ", null, {\n"
   const keyNames = Object.getOwnPropertyNames(keyIndexes)
   for (const key of keyNames) {
     const index = keyIndexes[key]
     source += JSON.stringify(key) + ": d[" + index + "],\n"
   }
-  source += "}"
+  source += "})"
   return evalProcessor(source)
 }
 
@@ -78,9 +77,11 @@ function compileListProcessor(listIndex, rootIndex) {
 }
 
 function evalProcessor(source) {
+  const { Node } = require("../grammar")
+
   // NB we might consider caching these functions, to reduce the amount of work
   // that the JIT has to do
-  return Function("d", source)
+  return eval("(function (d) {\n" + source + "\n})") //Function("d", source)
 }
 
 function emptyList() {}

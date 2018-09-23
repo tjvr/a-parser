@@ -1,21 +1,33 @@
 const test = require("ava")
 
-const nearley = require("nearley")
-
-const { compile } = require("../grammar")
+const { compile, metaGrammarSource } = require("../grammar")
 const { nearleyFromGrammar } = require("../nearley")
 
-function nearleyRules(grammar) {
-  return nearleyFromGrammar(grammar).rules.map(rule => {
-    let source = "" + rule.postprocess
-    source = source.replace(/^function[^{]+\{/, "")
-    source = source.replace(/\}$/, "")
+function stripFunction(func) {
+  return ("" + func)
+    .replace(/^function[^{]+\{/, "")
+    .replace(/\}$/, "")
+    .trim()
+}
+
+function nearleyRulesToJSON(rules) {
+  return rules.map(rule => {
     return {
       name: rule.name,
       symbols: rule.symbols,
-      process: source.trim(),
+      process: stripFunction(rule.postprocess),
     }
   })
+}
+
+function nearleyRulesToString(rules) {
+  return rules.map(rule => {
+    return rule.toString() //+ "  {% d => { " + stripFunction(rule.postprocess) + "} %}"
+  })
+}
+
+function nearleyRules(grammar) {
+  return nearleyRulesToJSON(nearleyFromGrammar(grammar).rules)
 }
 
 test("null processor", t => {
@@ -38,7 +50,7 @@ test("object processor", t => {
     {
       name: "foo",
       symbols: ["bar", { type: "quxx" }],
-      process: `return {\ntype: "Obj",\n"one": d[0],\n"two": d[1],\n}`,
+      process: `return new Node("Obj", null, {\n"one": d[0],\n"two": d[1],\n})`,
     },
   ])
 })
@@ -49,7 +61,7 @@ test("object with no keys", t => {
     {
       name: "foo",
       symbols: ["bar", { type: "quxx" }],
-      process: `return {\ntype: "Obj",\n}`,
+      process: `return new Node("Obj", null, {\n})`,
     },
   ])
 })
@@ -84,5 +96,45 @@ test("one-item list", t => {
       symbols: [{ type: "~" }, "stmt"],
       process: `return [d[1]]`,
     },
+  ])
+})
+
+test("compile meta-grammar", t => {
+  const grammar = compile(metaGrammarSource)
+  const nearleyGrammar = nearleyFromGrammar(grammar)
+  t.deepEqual(nearleyRulesToString(nearleyGrammar.rules), [
+    "grammar → blankLines rules blankLines",
+
+    "blankLines → ",
+    "blankLines → blankLines %newline",
+
+    "rules → rules %newline blankLines rule",
+    "rules → ",
+
+    "rule → %identifier nodeType %arrow children optionalSpace",
+
+    "optionalSpace → %space",
+    "optionalSpace → ",
+
+    "nodeType → %space",
+    "nodeType → %space %identifier %space",
+    "nodeType → %space %list %space",
+
+    "children → children %space child",
+    "children → ",
+
+    "child → symbol",
+    "child → key %: symbol",
+
+    "key → ",
+    "key → %list",
+    "key → %identifier",
+
+    "symbol → match %?",
+    "symbol → match %+",
+    "symbol → match %*",
+
+    "match → %string",
+    "match → %identifier",
   ])
 })

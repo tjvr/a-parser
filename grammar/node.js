@@ -24,6 +24,9 @@ class Node {
     if (attrs.type) {
       throw new Error("Cannot set 'type' property on a Node")
     }
+    if (typeof type !== "string") {
+      throw new Error("Node type must be a string")
+    }
     this.type = type // String
     this.region = region // Region
     Object.assign(this, attrs)
