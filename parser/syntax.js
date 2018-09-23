@@ -69,7 +69,7 @@ function parseGrammar(buffer) {
   }
 
   function expectError(expected) {
-    const message = "Expected " + expected
+    let message = "Expected " + expected
     if (tok) message += " (found " + tok.type + ")"
     syntaxError(message)
   }
