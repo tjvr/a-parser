@@ -2,6 +2,10 @@ const test = require("ava")
 
 const { Node, Pos, Region } = require("../grammar")
 
+test("warns if type is in attrs", t => {
+  t.throws(() => new Node("foo", null, { type: "bar" }), /^Cannot set 'type' property on a Node/)
+})
+
 test("formats region", t => {
   const region = new Region(new Pos(2, 8, 15), new Pos(2, 11, 18), "foo -> \nfoo -> bar quxx")
 

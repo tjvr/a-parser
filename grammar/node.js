@@ -1,3 +1,5 @@
+const hasOwnProperty = Object.prototype.hasOwnProperty
+
 function stringify(value, indent) {
   if (value && value.stringify) {
     return value.stringify(indent)
@@ -21,7 +23,7 @@ function stringify(value, indent) {
 
 class Node {
   constructor(type, region, attrs) {
-    if (attrs.type) {
+    if (hasOwnProperty.call(attrs, "type")) {
       throw new Error("Cannot set 'type' property on a Node")
     }
     if (typeof type !== "string") {
