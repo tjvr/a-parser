@@ -32,45 +32,53 @@ function nearleyProcess(rule) {
     case "null":
       return nuller
     case "root":
-      return compileRootProcessor(rule.rootIndex)
+      return compileRootProcessor(rule.rootIndex, rule.children)
     case "object":
-      return compileObjectProcessor(rule.object, rule.keys)
+      return compileObjectProcessor(rule.object, rule.keys, rule.children)
     case "list":
-      return compileListProcessor(rule.listIndex, rule.rootIndex)
+      return compileListProcessor(rule.listIndex, rule.rootIndex, rule.children)
   }
+}
+
+function childAt(index, children) {
+  let source = "d[" + index + "]"
+  if (children[index].type === "token") {
+    return source + ".value"
+  }
+  return source
 }
 
 // compileRootProcessor returns a function that selects the nth member of its
 // array argument
-function compileRootProcessor(index) {
-  return evalProcessor("return d[" + index + "]")
+function compileRootProcessor(index, children) {
+  return evalProcessor("return " + childAt(index, children))
 }
 
-function compileObjectProcessor(type, keyIndexes) {
+function compileObjectProcessor(type, keyIndexes, children) {
   let source = ""
   source += "return new Node(" + JSON.stringify(type) + ", null, {\n"
   const keyNames = Object.getOwnPropertyNames(keyIndexes)
   for (const key of keyNames) {
     const index = keyIndexes[key]
-    source += JSON.stringify(key) + ": d[" + index + "],\n"
+    source += JSON.stringify(key) + ": " + childAt(index, children) + ",\n"
   }
   source += "})"
   return evalProcessor(source)
 }
 
-function compileListProcessor(listIndex, rootIndex) {
+function compileListProcessor(listIndex, rootIndex, children) {
   if (rootIndex !== undefined && listIndex !== undefined) {
     let source = ""
-    source += "var list = d[" + listIndex + "].slice()\n"
-    source += "list.push(d[" + rootIndex + "])\n"
+    source += "var list = " + childAt(listIndex, children) + ".slice()\n"
+    source += "list.push(" + childAt(rootIndex, children) + ")\n"
     source += "return list"
     return evalProcessor(source)
   } else if (rootIndex !== undefined) {
     // Wrap the item in a list
-    return evalProcessor("return [d[" + rootIndex + "]]")
+    return evalProcessor("return [" + childAt(rootIndex, children) + "]")
   } else if (listIndex !== undefined) {
     // TODO we should probably forbid this in grammar/factory.js
-    return compileRootProcessor(listIndex)
+    return compileRootProcessor(listIndex, children)
   } else {
     return evalProcessor("return []")
   }

@@ -44,13 +44,24 @@ test("root processor", t => {
   ])
 })
 
+test("root token", t => {
+  const grammar = compile(`foo -> "(" :"quxx" ")"`)
+  t.deepEqual(nearleyRules(grammar), [
+    {
+      name: "foo",
+      symbols: [{ type: "(" }, { type: "quxx" }, { type: ")" }],
+      process: "return d[1].value",
+    },
+  ])
+})
+
 test("object processor", t => {
   const grammar = compile(`foo Obj -> one:bar two:"quxx"`)
   t.deepEqual(nearleyRules(grammar), [
     {
       name: "foo",
       symbols: ["bar", { type: "quxx" }],
-      process: `return new Node("Obj", null, {\n"one": d[0],\n"two": d[1],\n})`,
+      process: `return new Node("Obj", null, {\n"one": d[0],\n"two": d[1].value,\n})`,
     },
   ])
 })
