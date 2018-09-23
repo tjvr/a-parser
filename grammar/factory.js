@@ -113,17 +113,16 @@ function buildType(rule) {
   }
 }
 
+function resultName(child, modifier) {
+  const name = child.type === "name" ? child.name : "%" + child.name
+  return { type: "name", name: name + modifier }
+}
+
 function expandOptional(child, grammar) {
   child = buildChild(child)
 
-  let ruleName = child.name + "?"
-  if (child.type === "token") {
-    ruleName = "%" + ruleName
-  } else {
-    assert.equal(child.type, "name")
-  }
-  const result = { type: "name", name: ruleName }
-
+  const result = resultName(child, "?")
+  const ruleName = result.name
   if (grammar.get(ruleName)) {
     return result
   }
@@ -145,14 +144,8 @@ function expandOptional(child, grammar) {
 function expandRepeat(child, baseCase, grammar) {
   child = buildChild(child)
 
-  let ruleName = child.name + (baseCase ? "+" : "*")
-  if (child.type === "token") {
-    ruleName = "%" + ruleName
-  } else {
-    assert.equal(child.type, "name")
-  }
-  const result = { type: "name", name: ruleName }
-
+  const result = resultName(child, baseCase ? "+" : "*")
+  const ruleName = result.name
   if (grammar.get(ruleName)) {
     return result
   }
