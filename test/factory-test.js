@@ -1,7 +1,7 @@
 const test = require("ava")
 
-const { parseGrammar } = require("../parser/syntax")
-const { buildType, expandRules } = require("../parser/factory")
+const { parseGrammar } = require("../grammar/syntax")
+const { buildType, expandRules } = require("../grammar/factory")
 
 function parseRule(t, source) {
   const grammar = parseGrammar(source)

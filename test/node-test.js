@@ -1,6 +1,6 @@
 const test = require("ava")
 
-const { Node, Pos, Region } = require("../parser/node")
+const { Node, Pos, Region } = require("../grammar/node")
 
 test("formats region", t => {
   const region = new Region(new Pos(2, 8, 15), new Pos(2, 11, 18), "foo -> \nfoo -> bar quxx")
