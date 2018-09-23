@@ -1,4 +1,3 @@
-
 function stringify(value, indent) {
   if (value && value.stringify) {
     return value.stringify(indent)
@@ -95,7 +94,8 @@ class Region {
     const line = this.firstLine
     const endCol = this.end.line === this.start.line ? this.end.col : line.length
     let message = indent + line + "\n"
-    message += indent + Array(this.start.col).join(" ") + Array(endCol - this.start.col + 1).join("^")
+    message +=
+      indent + Array(this.start.col).join(" ") + Array(endCol - this.start.col + 1).join("^")
     return message
   }
 
@@ -108,9 +108,9 @@ class Region {
 
 class Pos {
   constructor(line, col, offset) {
-    this.line = line|0 // 1-based
-    this.col = col|0 // 1-based
-    this.offset = offset|0
+    this.line = line | 0 // 1-based
+    this.col = col | 0 // 1-based
+    this.offset = offset | 0
   }
 
   static before(token) {
@@ -129,5 +129,4 @@ class Pos {
   }
 }
 
-module.exports = {Node, Pos, Region}
-
+module.exports = { Node, Pos, Region }

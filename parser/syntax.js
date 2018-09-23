@@ -1,14 +1,13 @@
+const moo = require("moo")
 
-const moo = require('moo')
-
-const {Node, Pos, Region} = require('./node')
+const { Node, Pos, Region } = require("./node")
 
 const metaLexer = moo.compile({
-  newline: {match: '\n', lineBreaks: true},
-  _op: {match: [":", "?", "*", "+"], type: x => x},
-  arrow: '->',
+  newline: { match: "\n", lineBreaks: true },
+  _op: { match: [":", "?", "*", "+"], type: x => x },
+  arrow: "->",
   list: "[]",
-  string: {match: /"(?:\\["\\]|[^\n"\\])*"/, value: s => s.slice(1, -1)},
+  string: { match: /"(?:\\["\\]|[^\n"\\])*"/, value: s => s.slice(1, -1) },
   space: /[ \t\f\r]+/,
   identifier: /[A-Za-z][A-Za-z0-9_-]*/,
   comment: /\/\/.*$/,
@@ -54,7 +53,7 @@ function parseGrammar(buffer) {
   function next() {
     do {
       tok = metaLexer.next()
-    } while (tok && (tok.type === "comment"))
+    } while (tok && tok.type === "comment")
   }
   next()
 
@@ -100,21 +99,21 @@ function parseGrammar(buffer) {
     const name = tok.value
 
     switch (tok.type) {
-    case "identifier":
-      next()
-      return node("Name", start, {name})
-    case "string":
-      next()
-      return node("Token", start, {name})
-    default:
-      expectError("value")
+      case "identifier":
+        next()
+        return node("Name", start, { name })
+      case "string":
+        next()
+        return node("Token", start, { name })
+      default:
+        expectError("value")
     }
   }
 
   function parseSimpleToken() {
     const start = Pos.before(tok)
     const name = expect("string").value
-    const atom = node("Token", start, {name})
+    const atom = node("Token", start, { name })
     return parseModifier(atom, start)
   }
 
@@ -122,7 +121,7 @@ function parseGrammar(buffer) {
     expect(":")
     const value = parseValue()
     const match = parseModifier(value, start)
-    return node("Key", start, {key, match})
+    return node("Key", start, { key, match })
   }
 
   function parseIdentifierAtom() {
@@ -130,61 +129,61 @@ function parseGrammar(buffer) {
     const value = expect("identifier").value
 
     if (tok && tok.type === ":") {
-      const key = node("Name", start, {name: value})
+      const key = node("Name", start, { name: value })
       return parseKey(start, key)
     }
-    const atom = node("Name", start, {name: value})
+    const atom = node("Name", start, { name: value })
     return parseModifier(atom, start)
   }
 
   function parseAtom() {
     const start = Pos.before(tok)
     switch (tok.type) {
-    case "string":
-      return parseSimpleToken()
-    case ":":
-      return parseKey(start, node("Root", null, {}))
-    case "list":
-      next()
-      return parseKey(start, node("List", null, {}))
-    case "identifier":
-      return parseIdentifierAtom()
-    default:
-      expectError("value")
+      case "string":
+        return parseSimpleToken()
+      case ":":
+        return parseKey(start, node("Root", null, {}))
+      case "list":
+        next()
+        return parseKey(start, node("List", null, {}))
+      case "identifier":
+        return parseIdentifierAtom()
+      default:
+        expectError("value")
     }
   }
 
   function parseModifier(atom, start) {
     let type
     switch (tok && tok.type) {
-    case "+":
-      type = "OneOrMany"
-      break
-    case "*":
-      type = "ZeroOrMany"
-      break
-    case "?":
-      type = "Optional"
-      break
-    default:
-      return atom
+      case "+":
+        type = "OneOrMany"
+        break
+      case "*":
+        type = "ZeroOrMany"
+        break
+      case "?":
+        type = "Optional"
+        break
+      default:
+        return atom
     }
     next()
-    return node(type, start, {atom})
+    return node(type, start, { atom })
   }
 
   function parseNodeType() {
     const start = Pos.before(tok)
     const value = tok.value
     switch (tok && tok.type) {
-    case "identifier":
-      next()
-      return node("Name", start, {value})
-    case "list":
-      next()
-      return node("List", start, {value})
-    default:
-      syntaxError("Expected node type (found " + tok.type + ")")
+      case "identifier":
+        next()
+        return node("Name", start, { value })
+      case "list":
+        next()
+        return node("List", start, { value })
+      default:
+        syntaxError("Expected node type (found " + tok.type + ")")
     }
   }
 
@@ -226,13 +225,15 @@ function parseGrammar(buffer) {
     while (tok) {
       const rule = parseRule()
       rules.push(rule)
-      if (tok) { end = Pos.before(tok) }
+      if (tok) {
+        end = Pos.before(tok)
+      }
       parseBlankLines()
     }
-    return new Node("Grammar", new Region(start, end, buffer), {rules})
+    return new Node("Grammar", new Region(start, end, buffer), { rules })
   }
 
   return parseFile()
 }
 
-module.exports = {parseGrammar, metaLexer, metaGrammar}
+module.exports = { parseGrammar, metaLexer, metaGrammar }

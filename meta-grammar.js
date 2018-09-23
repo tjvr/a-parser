@@ -1,6 +1,5 @@
-
-const { parseGrammar } = require('./parser/syntax')
-const { expandRules } = require('./parser/factory')
+const { parseGrammar } = require("./parser/syntax")
+const { expandRules } = require("./parser/factory")
 
 const example = `
 
@@ -76,11 +75,10 @@ console.log()
 const grammar = expandRules(tree.rules)
 for (let rule of grammar.rules) {
   console.log(rule.name + " -> " + rule.children.map(x => x.name).join(" "))
-  if (rule.type === 'object') {
+  if (rule.type === "object") {
     console.log(rule.object + " { " + Object.keys(rule.keys).join(", ") + " }")
-  } else if (rule.type === 'root') {
+  } else if (rule.type === "root") {
     console.log("select " + rule.rootIndex)
   }
   console.log()
 }
-
