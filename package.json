@@ -1,17 +1,28 @@
 {
   "scripts": {
     "test": "ava",
-    "fmt": "prettier --print-width=100 --write *.js */*.js"
+    "fmt": "prettier --write *.js */*.js",
+    "fmt-staged": "lint-staged"
   },
   "devDependencies": {
     "ava": "1.0.0-beta.8",
+    "lint-staged": "^7.3.0",
+    "pre-commit": "^1.2.2",
     "prettier": "^1.14.3"
   },
   "dependencies": {
     "moo": "git+https://git@github.com/no-context/moo.git"
   },
+  "pre-commit": "fmt-staged",
+  "lint-staged": {
+    "*.js": [
+      "prettier --write",
+      "git add"
+    ]
+  },
   "prettier": {
     "semi": false,
-    "trailingComma": "es5"
+    "trailingComma": "es5",
+    "printWidth": 100
   }
 }
