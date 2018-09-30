@@ -156,7 +156,7 @@ Apart from these restrictions, you can use these annotations anywhere in the rul
 
 ## EBNF Operators
 
-The regex-like operators for optional tokens and repetition are provided:
+Three regex-like operators for optional tokens and repetition are provided:
 
 
 ### Option `?`
