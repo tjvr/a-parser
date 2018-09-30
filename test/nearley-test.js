@@ -110,6 +110,12 @@ test("one-item list", t => {
   ])
 })
 
+test("compile nullable rule", t => {
+  const grammar = compile(`foo ->`)
+  const nearleyGrammar = nearleyFromGrammar(grammar)
+  t.deepEqual(nearleyGrammar.rules[0].symbols, [])
+})
+
 test("compile meta-grammar", t => {
   const grammar = compile(metaGrammarSource)
   const nearleyGrammar = nearleyFromGrammar(grammar)
@@ -120,7 +126,7 @@ test("compile meta-grammar", t => {
     "blankLines → blankLines %newline",
 
     "rules → rules %newline blankLines rule",
-    "rules → ",
+    "rules → rule",
 
     "rule → %identifier nodeType %arrow children optionalSpace",
 
@@ -144,6 +150,7 @@ test("compile meta-grammar", t => {
     "symbol → match %?",
     "symbol → match %+",
     "symbol → match %*",
+    "symbol → match",
 
     "match → %string",
     "match → %identifier",

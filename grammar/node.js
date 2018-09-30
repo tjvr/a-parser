@@ -38,6 +38,15 @@ class Node {
     return this.stringify()
   }
 
+  eachAttribute(cb) {
+    const keys = Object.getOwnPropertyNames(this)
+    for (let key of keys) {
+      const value = this[key]
+      if (key === "type" || key === "region") continue
+      cb(key, this[key])
+    }
+  }
+
   stringify(indent) {
     indent = indent || ""
     const nextIndent = indent + "  "
@@ -51,13 +60,11 @@ class Node {
     const keys = Object.getOwnPropertyNames(this)
 
     let hadKeys = false
-    for (let key of keys) {
-      const value = this[key]
-      if (key === "type" || key === "region") continue
+    this.eachAttribute((key, value) => {
       s += ",\n" + nextIndent + key + ": "
       s += stringify(value, nextIndent)
       hadKeys = true
-    }
+    })
 
     if (!hadKeys) {
       return s + " }"
@@ -67,6 +74,18 @@ class Node {
 
   formatError(message) {
     return this.region.formatError(message)
+  }
+
+  withoutRegions() {
+    const newAttrs = {}
+    this.eachAttribute((key, value) => {
+      newAttrs[key] = Array.isArray(value)
+        ? value.map(item => (item.withoutRegions ? item.withoutRegions() : item))
+        : value && value.withoutRegions
+          ? value.withoutRegions()
+          : value
+    })
+    return new Node(this.type, null, newAttrs)
   }
 }
 

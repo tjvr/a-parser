@@ -55,6 +55,7 @@ function compileRootProcessor(index, children) {
 }
 
 function compileObjectProcessor(type, keyIndexes, children) {
+  if (typeof type !== "string") assert.fail("Node type must be a string")
   let source = ""
   source += "return new Node(" + JSON.stringify(type) + ", null, {\n"
   const keyNames = Object.getOwnPropertyNames(keyIndexes)

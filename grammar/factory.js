@@ -109,7 +109,7 @@ function buildType(rule) {
     case "List":
       return buildListType(rule.children)
     case "Name":
-      return buildObjectType(rule.nodeType.value, rule.children)
+      return buildObjectType(rule.nodeType.name, rule.children)
   }
 }
 

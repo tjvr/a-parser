@@ -22,9 +22,9 @@ blankLines ->
 blankLines -> blankLines "newline"
 
 rules [] -> []:rules "newline" blankLines :rule
-rules [] ->
+rules [] -> :rule
 
-rule Rule -> name:"identifier" type:nodeType "arrow" children:children optionalSpace
+rule Rule -> name:"identifier" nodeType:nodeType "arrow" children:children optionalSpace
 
 optionalSpace -> "space"
 optionalSpace ->
@@ -46,6 +46,7 @@ key Name -> name:"identifier"
 symbol Optional   -> atom:match "?"
 symbol OneOrMany  -> atom:match "+"
 symbol ZeroOrMany -> atom:match "*"
+symbol            ->     :match
 
 match Token -> name:"string"
 match Name  -> name:"identifier"
@@ -184,10 +185,10 @@ function parseGrammar(buffer) {
     switch (tok && tok.type) {
       case "identifier":
         next()
-        return node("Name", start, { value })
+        return node("Name", start, { name: value })
       case "list":
         next()
-        return node("List", start, { value })
+        return node("List", start, {})
       default:
         syntaxError("Expected node type (found " + tok.type + ")")
     }
@@ -198,6 +199,7 @@ function parseGrammar(buffer) {
     const attrs = {}
     attrs.name = expect("identifier").value
     expect("space")
+    attrs.nodeType = null
     if (tok.type !== "arrow") {
       attrs.nodeType = parseNodeType()
       expect("space")
