@@ -1,6 +1,23 @@
 
+# What is this?
 
-# Post-processing
+This is a work-in-progress parser generator: a framework for generating parsers from a grammar definition. It takes inspiration from [Nearley](https://github.com/kach/nearley) and other projects.
+
+A _parser_ is used to turn text (such as the source code for a programming language) into a _parse tree_. This tree-like structure contains all of the hierarchy of the source code, and is classically the input to a _compiler_ which traverses the tree to emit machine code (at a rough simplification. Most production compilers use several different intermediate tree formats.)
+
+A parser is usually used with a _tokenizer_ (or "lexer"). The tokenizer does the "dumb" job of splitting the text into "words", called "tokens"; the parser does the "smart" job of recognising sequences of such tokens. We recommend [Moo](https://github.com/no-context/moo) as a very fast and friendly tokenizer.
+
+
+# Grammar definitions
+
+Grammars are defined using a custom syntax, from which a parser can be generated.
+
+(You might wonder how this syntax is defined itself: in fact, it has its own grammar, and can parse itself! We call this "bootstrapping".)
+
+The `grammar` module contains code to interpret this syntax.
+
+
+## Post-processing
 
 By default, rules will match input, but won't return anything. Annotations are used to describe how to construct a parse tree from what was matched. Rules without annotations always produce the value `null`.
     
@@ -18,7 +35,7 @@ You cannot annotate children if the rule is not annotated first. Otherwise, ther
     // Not allowed
 
 
-## Root Annotation
+### Root Annotation
 
 It's often useful to pass through a node unchanged, without wrapping it in another object. For example, you might have a `number` rule that can match a `float`. We can use the **root annotation** (which can be thought of as an empty attribute name). Use this to pass through the child unchanged.
 
@@ -49,7 +66,7 @@ The root annotation cannot be combined with other annotations.
     // Not allowed
 
 
-## List Annotations
+### List Annotations
 
 It's often useful to parse lists (e.g. statements in a program; comma-separated arguments to a function call).
 
@@ -94,12 +111,12 @@ Apart from these restrictions, you can use these annotations anywhere in the rul
     args [] -> []:args ";" :expr
 
 
-# EBNF Operators
+## EBNF Operators
 
 The regex-like operators for optional tokens and repetition are provided:
 
 
-## Option `?`
+### Option `?`
 
 `val?` matches zero or one occurences of `val`. It expands to the generated rule `val?`:
 
@@ -109,7 +126,7 @@ The regex-like operators for optional tokens and repetition are provided:
 In the expression `key:val?`, if `val` is not present, then `key` will be `null`.
 
 
-## One or many `+`
+### One or many `+`
 
 `val+` matches one or many occurences of `val`. It expands to the generated rule `val+`:
 
@@ -118,7 +135,7 @@ In the expression `key:val?`, if `val` is not present, then `key` will be `null`
 
 In the expression `key:val+`, `key` will always contain a non-empty array.
 
-## Zero or many `*`
+### Zero or many `*`
 
 `val*` matches zero or many occurences of `val`. It expands to the generated rule `val*`:
 
