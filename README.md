@@ -8,6 +8,49 @@ A _parser_ is used to turn text (such as the source code for a programming langu
 A parser is usually used with a _tokenizer_ (or "lexer"). The tokenizer does the "dumb" job of splitting the text into "words", called "tokens"; the parser does the "smart" job of recognising sequences of such tokens. We recommend [Moo](https://github.com/no-context/moo) as a very fast and friendly tokenizer.
 
 
+# Parse trees
+
+The `grammar/node` file contains types for representing a parse tree. These are loosely modelled on the Node objects in the [ESTree spec](https://github.com/estree/estree/blob/master/es5.md#node-objects), which is based on a production JavaScript parser.
+
+```js
+interface Node {
+    type: string;
+    region: Region | null;
+    ...attrs
+}
+```
+
+Parse trees are made up of Nodes. Grammars include annotations describing how to build a parse tree from them, which lets you conveniently omit syntactic information (such as whitespace, or operator tokens) from your parse tree, without writing any grammar rule post-processors or tree traversal code.
+
+A `Node` includes a `Region`, which describes the location in the source file where the node was found. This is very useful for generating descriptive semantic error messages from your compiler: for example, you might like to highlight the region in which a type error was found.
+
+```js
+interface Region {
+    start: Pos,
+    end: Pos,
+    buffer: String,
+}
+```
+
+A `Region` consists of a start position (just before the first character that was matched) and an end position (just after the last character that was matched). It also includes a pointer to the entire source text.
+
+A `Pos` is a simple pair of line and column numbers. Like Moo, these start from one. The character offset from the beginning of the source is also included.
+
+```js
+interface Pos {
+    line: Number, // >= 1
+    col: Number, // >= 1
+    offset: Number,
+}
+```
+
+A `Node` additionally includes attributes, based on the annotations in the source file. Attribute values have three different kinds:
+
+- another `Node`
+- the value of token
+- an Array (a list of Nodes, or token values)
+
+
 # Grammar definitions
 
 Grammars are defined using a custom syntax, from which a parser can be generated.
@@ -143,4 +186,5 @@ In the expression `key:val+`, `key` will always contain a non-empty array.
     val* [] ->
 
 In the expression `key:val*`, `key` will always contain an array, but it may be empty.
+
 
