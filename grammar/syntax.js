@@ -227,6 +227,9 @@ function parseGrammar(buffer) {
 
   function parseFile() {
     parseBlankLines()
+    if (!tok) {
+      return new Node("Grammar", null, { rules: [] })
+    }
     const start = Pos.before(tok)
     let end = Pos.before(tok)
     const rules = []

@@ -36,6 +36,16 @@ function parseRule(t, source) {
   return rule
 }
 
+test("allow empty grammar", t => {
+  let tree = parseGrammar("\n \n")
+  t.is(tree.type, "Grammar")
+  t.deepEqual(tree.rules, [])
+
+  tree = parseGrammar("")
+  t.is(tree.type, "Grammar")
+  t.deepEqual(tree.rules, [])
+})
+
 test("parses rule", t => {
   const tree = parseGrammar(`foo [] -> bar:"quxx"`)
   t.snapshot(tree)
