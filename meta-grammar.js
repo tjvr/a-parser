@@ -1,5 +1,5 @@
-const { parseGrammar } = require("./parser/syntax")
-const { expandRules } = require("./parser/factory")
+const { parseGrammar } = require("./grammar/syntax")
+const { expandRules } = require("./grammar/factory")
 
 const example = `
 
