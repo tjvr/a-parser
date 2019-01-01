@@ -6,30 +6,24 @@ const meta = require("../grammar/meta")
 const grammar = require("../grammar/grammar")
 const { Node, newGrammar } = require("../grammar")
 const nearleyParser = require("../nearley")
-const compile = newGrammar
 const metaLexer = meta.lexer
 const metaGrammarSource = meta.grammarSource
 const parseTreeFromGrammarSource = meta.parse
 
-let metaGrammar
-
-function nearleyGrammar(grammar) {
-  return nearleyParser(grammar).nearleyGrammar
-}
+let metaParser
 
 function parseGrammarWithNearley(t, source) {
-  const p = new nearley.Parser(metaGrammar, {
-    keepHistory: true,
-  })
-  try {
-    p.feed(source)
-  } catch (e) {
-    console.log(p.table.map(column => column.states.map(x => x.toString())))
-    throw e
+  metaParser.reset()
+  metaLexer.reset(source)
+  for (let tok of metaLexer) {
+    try {
+      metaParser.eat(tok)
+    } catch (e) {
+      console.log(p.table.map(column => column.states.map(x => x.toString())))
+      throw e
+    }
   }
-  const results = p.finish()
-  t.is(results.length, 1)
-  return results[0]
+  return metaParser.result()
 }
 
 function parseRuleWithNearley(t, source) {
@@ -42,9 +36,8 @@ function parseRuleWithNearley(t, source) {
 }
 
 test.before(t => {
-  const grammar = compile(metaGrammarSource)
-  metaGrammar = nearleyGrammar(grammar)
-  metaGrammar.lexer = metaLexer
+  const metaGrammar = newGrammar(meta.grammarSource)
+  metaParser = nearleyParser(metaGrammar)
 })
 
 test("empty rule", t => {

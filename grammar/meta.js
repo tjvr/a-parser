@@ -247,6 +247,4 @@ function parse(buffer) {
   return parseFile()
 }
 
-const grammar = parse(grammarSource)
-
-module.exports = { lexer, grammarSource, parse, grammar }
+module.exports = { lexer, grammarSource, parse }
