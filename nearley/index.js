@@ -1,6 +1,52 @@
 const assert = require("assert")
 
+const grammar = require("../grammar")
+
 const nearley = require("nearley")
+
+class Parser {
+  constructor(g) {
+    if (typeof g !== "object" || !(g instanceof grammar.Grammar)) {
+      throw new Error("Expected a Grammar")
+    }
+    this.grammar = g
+    this.nearleyGrammar = nearleyFromGrammar(g)
+    this.reset()
+  }
+
+  reset() {
+    this.nearleyParser = new nearley.Parser(this.nearleyGrammar, {
+      lexer: new SingleTokenLexer(),
+    })
+  }
+
+  eat(tok) {
+    this.nearleyParser.feed(tok)
+  }
+
+  result() {
+    const results = this.nearleyParser.finish()
+    return results[0]
+  }
+}
+
+class SingleTokenLexer {
+  reset(token) {
+    this.token = token
+  }
+
+  save() {}
+
+  next() {
+    const token = this.token
+    this.token = null
+    return token
+  }
+
+  formatError(message) {
+    return message
+  }
+}
 
 function nearleyFromGrammar(grammar) {
   const rules = []
@@ -48,8 +94,8 @@ function childAt(index, children) {
   return source
 }
 
-// compileRootProcessor returns a function that selects the nth member of its
-// array argument
+// compileRootProcessor returns a function that selects the nth member of
+// its array argument
 function compileRootProcessor(index, children) {
   return evalProcessor("return " + childAt(index, children))
 }
@@ -86,17 +132,21 @@ function compileListProcessor(listIndex, rootIndex, children) {
 }
 
 function evalProcessor(source) {
+  // import the Node class into the scope of eval()
   const { Node } = require("../grammar")
 
-  // NB we might consider caching these functions, to reduce the amount of work
-  // that the JIT has to do
+  // NB we could cache these functions, to reduce the amount of work that
+  // the JIT has to do. Some processors (e.g. the root processor) may
+  // occur multiple times
   return eval("(function (d) {\n" + source + "\n})") //Function("d", source)
 }
-
-function emptyList() {}
 
 function nuller() {
   return null
 }
 
-module.exports = nearleyFromGrammar
+function newParser(grammar) {
+  return new Parser(grammar)
+}
+
+module.exports = newParser

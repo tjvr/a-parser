@@ -5,13 +5,17 @@ const nearley = require("nearley")
 const meta = require("../grammar/meta")
 const grammar = require("../grammar/grammar")
 const { Node, newGrammar } = require("../grammar")
-const nearleyFromGrammar = require("../nearley")
+const nearleyParser = require("../nearley")
 const compile = newGrammar
 const metaLexer = meta.lexer
 const metaGrammarSource = meta.grammarSource
 const parseTreeFromGrammarSource = meta.parse
 
 let metaGrammar
+
+function nearleyGrammar(grammar) {
+  return nearleyParser(grammar).nearleyGrammar
+}
 
 function parseGrammarWithNearley(t, source) {
   const p = new nearley.Parser(metaGrammar, {
@@ -39,7 +43,7 @@ function parseRuleWithNearley(t, source) {
 
 test.before(t => {
   const grammar = compile(metaGrammarSource)
-  metaGrammar = nearleyFromGrammar(grammar)
+  metaGrammar = nearleyGrammar(grammar)
   metaGrammar.lexer = metaLexer
 })
 

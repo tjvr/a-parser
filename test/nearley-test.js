@@ -2,7 +2,7 @@ const test = require("ava")
 
 const meta = require("../grammar/meta")
 const grammar = require("../grammar/grammar")
-const nearleyFromGrammar = require("../nearley")
+const nearleyParser = require("../nearley")
 const compile = grammar.newGrammar
 const metaGrammarSource = meta.grammarSource
 
@@ -11,6 +11,10 @@ function stripFunction(func) {
     .replace(/^function[^{]+\{/, "")
     .replace(/\}$/, "")
     .trim()
+}
+
+function nearleyGrammarFrom(grammar) {
+  return nearleyParser(grammar).nearleyGrammar
 }
 
 function nearleyRulesToJSON(rules) {
@@ -30,7 +34,7 @@ function nearleyRulesToString(rules) {
 }
 
 function nearleyRules(grammar) {
-  return nearleyRulesToJSON(nearleyFromGrammar(grammar).rules)
+  return nearleyRulesToJSON(nearleyGrammarFrom(grammar).rules)
 }
 
 test("null processor", t => {
@@ -115,13 +119,13 @@ test("one-item list", t => {
 
 test("compile nullable rule", t => {
   const grammar = compile(`foo ->`)
-  const nearleyGrammar = nearleyFromGrammar(grammar)
+  const nearleyGrammar = nearleyGrammarFrom(grammar)
   t.deepEqual(nearleyGrammar.rules[0].symbols, [])
 })
 
 test("compile meta-grammar", t => {
   const grammar = compile(metaGrammarSource)
-  const nearleyGrammar = nearleyFromGrammar(grammar)
+  const nearleyGrammar = nearleyGrammarFrom(grammar)
   t.deepEqual(nearleyRulesToString(nearleyGrammar.rules), [
     "grammar → blankLines rules blankLines",
 
