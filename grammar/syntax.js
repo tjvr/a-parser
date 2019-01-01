@@ -9,7 +9,7 @@ const metaLexer = moo.compile({
   list: "[]",
   string: { match: /"(?:\\["\\]|[^\n"\\])*"/, value: s => s.slice(1, -1) },
   space: /[ \t\f\r]+/,
-  identifier: /[A-Za-z][A-Za-z0-9_-]*/,
+  identifier: /[A-Za-z_][A-Za-z0-9_-]*/,
   comment: /\/\/.*$/,
   error: moo.error,
 })
