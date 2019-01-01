@@ -1,7 +1,8 @@
 const test = require("ava")
 
-const { metaLexer, parseTreeFromGrammarSource } = require("../grammar")
-const parseGrammar = parseTreeFromGrammarSource
+const meta = require("../grammar/meta")
+const metaLexer = meta.lexer
+const parseGrammar = meta.parse
 
 function metaLex(source) {
   metaLexer.reset(source)

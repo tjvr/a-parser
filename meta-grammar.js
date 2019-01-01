@@ -1,5 +1,5 @@
-const { parseGrammar } = require("./grammar/syntax")
-const { expandRules } = require("./grammar/factory")
+const meta = require("./grammar/meta")
+const grammar = require("./grammar/grammar")
 
 const example = `
 
@@ -69,11 +69,11 @@ expr Literal -> value:"string"
 
 `
 
-const tree = parseGrammar(program)
+const tree = meta.parse(program)
 console.log(tree.toString())
 console.log()
-const grammar = expandRules(tree.rules)
-for (let rule of grammar.rules) {
+const g = grammar.fromParseTree(tree.rules)
+for (let rule of g.rules) {
   console.log(rule.name + " -> " + rule.children.map(x => x.name).join(" "))
   if (rule.type === "object") {
     console.log(rule.object + " { " + Object.keys(rule.keys).join(", ") + " }")

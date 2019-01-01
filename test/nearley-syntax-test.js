@@ -2,14 +2,14 @@ const test = require("ava")
 
 const nearley = require("nearley")
 
-const {
-  Node,
-  compile,
-  metaLexer,
-  metaGrammarSource,
-  parseTreeFromGrammarSource,
-} = require("../grammar")
-const { nearleyFromGrammar } = require("../nearley")
+const meta = require("../grammar/meta")
+const grammar = require("../grammar/grammar")
+const { Node, newGrammar } = require("../grammar")
+const nearleyFromGrammar = require("../nearley")
+const compile = newGrammar
+const metaLexer = meta.lexer
+const metaGrammarSource = meta.grammarSource
+const parseTreeFromGrammarSource = meta.parse
 
 let metaGrammar
 

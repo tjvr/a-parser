@@ -2,7 +2,7 @@ const moo = require("moo")
 
 const { Node, Pos, Region } = require("./node")
 
-const metaLexer = moo.compile({
+const lexer = moo.compile({
   newline: { match: "\n", lineBreaks: true },
   _op: { match: [":", "?", "*", "+"], type: x => x },
   arrow: "->",
@@ -14,7 +14,7 @@ const metaLexer = moo.compile({
   error: moo.error,
 })
 
-const metaGrammarSource = `
+const grammarSource = `
 
 grammar Grammar -> blankLines rules:rules blankLines
 
@@ -53,13 +53,13 @@ match Name  -> name:"identifier"
 
 `
 
-function parseGrammar(buffer) {
-  metaLexer.reset(buffer)
+function parse(buffer) {
+  lexer.reset(buffer)
 
   var tok
   function next() {
     do {
-      tok = metaLexer.next()
+      tok = lexer.next()
     } while (tok && tok.type === "comment")
   }
   next()
@@ -71,7 +71,7 @@ function parseGrammar(buffer) {
     if (!tok) {
       throw new Error(message + " at EOF")
     }
-    throw new Error(metaLexer.formatError(tok, message))
+    throw new Error(lexer.formatError(tok, message))
   }
 
   function expectError(expected) {
@@ -90,7 +90,7 @@ function parseGrammar(buffer) {
   }
 
   function node(type, start, attrs) {
-    const end = tok ? Pos.before(tok) : new Pos(metaLexer.line, metaLexer.col, metaLexer.index)
+    const end = tok ? Pos.before(tok) : new Pos(lexer.line, lexer.col, lexer.index)
     const region = new Region(start, end, buffer)
     return new Node(type, region, attrs)
   }
@@ -247,4 +247,6 @@ function parseGrammar(buffer) {
   return parseFile()
 }
 
-module.exports = { parseGrammar, metaLexer, metaGrammarSource }
+const grammar = parse(grammarSource)
+
+module.exports = { lexer, grammarSource, parse, grammar }

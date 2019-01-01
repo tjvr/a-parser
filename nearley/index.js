@@ -99,4 +99,4 @@ function nuller() {
   return null
 }
 
-module.exports = { nearleyFromGrammar }
+module.exports = nearleyFromGrammar

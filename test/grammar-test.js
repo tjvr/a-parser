@@ -1,11 +1,10 @@
 const test = require("ava")
 
-const { parseTreeFromGrammarSource } = require("../grammar")
-const { grammarFromParseTree } = require("../grammar")
-const parseGrammar = parseTreeFromGrammarSource
-const expandRules = grammarFromParseTree
-
-const { buildType } = require("../grammar/factory")
+const meta = require("../grammar/meta")
+const grammar = require("../grammar/grammar")
+const parseGrammar = meta.parse
+const buildType = grammar._buildType
+const expandRules = grammar.fromParseTree
 
 function parseRule(t, source) {
   const grammar = parseGrammar(source)

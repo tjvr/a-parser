@@ -1,7 +1,10 @@
 const test = require("ava")
 
-const { compile, metaGrammarSource } = require("../grammar")
-const { nearleyFromGrammar } = require("../nearley")
+const meta = require("../grammar/meta")
+const grammar = require("../grammar/grammar")
+const nearleyFromGrammar = require("../nearley")
+const compile = grammar.newGrammar
+const metaGrammarSource = meta.grammarSource
 
 function stripFunction(func) {
   return ("" + func)
