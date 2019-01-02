@@ -26,12 +26,12 @@ program Program -> lines:statements
 expr IfElse -> "if" _ cond:expr _ "then" _ tval:expr _ "else" _ fval:expr
 //expr IfElse -> "if" _ cond:expr _ "then" _ tval:expr
 expr Number -> value:"number"
-expr Block -> "{" _ statements:statements _ "}"
+expr Block -> "{" _ statements:statements? _ "}"
 
-statements [] -> []:statements ";"
+//statements [] -> []:statements ";"
 statements [] -> []:statements ";" :stmt
 statements [] -> :stmt
-statements [] -> 
+//statements [] -> 
 
 stmt -> :expr
 
@@ -41,6 +41,28 @@ _ ->
 
 `)
 const parser = compileNearley(grammar)
+
+function hint() {
+  let tokenTypes = parser.expectedTypes()
+
+  const l = lexer.clone()
+  tokenTypes = tokenTypes.filter(type => {
+    l.reset(type)
+    try {
+      if (l.next().type === type) {
+        return true
+      }
+    } catch (err) {}
+    return false
+  })
+
+  if (tokenTypes.length === 1) {
+    return "Expected " + tokenTypes[0]
+  } else if (tokenTypes.length > 1) {
+    return "Expected one of " + tokenTypes.join(", ")
+  }
+  return ""
+}
 
 function parse(source) {
   parser.reset()
@@ -55,13 +77,7 @@ function parse(source) {
     try {
       parser.eat(tok)
     } catch (err) {
-      let msg = lexer.formatError(tok, "Parse error")
-      const tokenTypes = parser.expectedTypes()
-      if (tokenTypes.length === 1) {
-        msg += "\nExpected " + tokenTypes[0]
-      } else {
-        msg += "\nExpected one of " + tokenTypes.join(", ")
-      }
+      let msg = lexer.formatError(tok, "Parse error") + "\n" + hint()
       throw new Error(msg)
     }
   }
@@ -70,8 +86,7 @@ function parse(source) {
   try {
     program = parser.result()
   } catch (err) {
-    //const eof = {text: '', line: lexer.line, col: lexer.col}
-    throw new Error(lexer.formatError(lexer.makeEOF(), "Unexpected EOF"))
+    throw new Error(lexer.formatError(lexer.makeEOF(), "Unexpected EOF") + "\n" + hint())
   }
   return program
 }

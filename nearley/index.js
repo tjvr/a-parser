@@ -39,6 +39,7 @@ class NearleyParser {
     const p = this.nearleyParser
     const column = p.table[p.current]
     const types = new Set()
+
     for (let state of column.scannable) {
       const exp = state.rule.symbols[state.dot]
       if (!exp.type) {
@@ -46,6 +47,7 @@ class NearleyParser {
       }
       types.add(exp.type)
     }
+
     return Array.from(types)
   }
 
@@ -94,7 +96,9 @@ function nearleyRule(rule) {
   }
 
   const postprocess = nearleyProcess(rule)
-  return new nearley.Rule(rule.name, symbols, postprocess)
+  const nr = new nearley.Rule(rule.name, symbols, postprocess)
+  nr.definition = rule
+  return nr
 }
 
 function nearleyProcess(rule) {
