@@ -139,62 +139,68 @@ function resultName(child, modifier) {
   return { type: "name", name: name + modifier }
 }
 
-function expandOptional(child, grammar) {
+function expandOptional(child, after) {
   child = buildChild(child)
 
   const result = resultName(child, "?")
   const ruleName = result.name
-  if (grammar.get(ruleName)) {
-    return result
-  }
 
-  grammar.add({
-    name: ruleName,
-    type: "root",
-    rootIndex: 0,
-    children: [child],
-  })
-  grammar.add({
-    name: ruleName,
-    type: "null",
-    children: [],
+  after(grammar => {
+    if (grammar.get(ruleName)) {
+      return result
+    }
+
+    grammar.add({
+      name: ruleName,
+      type: "root",
+      rootIndex: 0,
+      children: [child],
+    })
+    grammar.add({
+      name: ruleName,
+      type: "null",
+      children: [],
+    })
   })
   return result
 }
 
-function expandRepeat(child, baseCase, grammar) {
+function expandRepeat(child, baseCase, after) {
   child = buildChild(child)
 
   const result = resultName(child, baseCase ? "+" : "*")
   const ruleName = result.name
-  if (grammar.get(ruleName)) {
-    return result
-  }
 
-  grammar.add({
-    name: ruleName,
-    type: "list",
-    rootIndex: baseCase ? 0 : undefined,
-    children: baseCase ? [child] : [],
-  })
-  grammar.add({
-    name: ruleName,
-    type: "list",
-    listIndex: 0,
-    rootIndex: 1,
-    children: [{ type: "name", name: ruleName }, child],
+  after(grammar => {
+    if (grammar.get(ruleName)) {
+      return result
+    }
+
+    grammar.add({
+      name: ruleName,
+      type: "list",
+      rootIndex: baseCase ? 0 : undefined,
+      children: baseCase ? [child] : [],
+    })
+    grammar.add({
+      name: ruleName,
+      type: "list",
+      listIndex: 0,
+      rootIndex: 1,
+      children: [{ type: "name", name: ruleName }, child],
+    })
   })
   return result
 }
 
-function expandChild(child, grammar) {
+function expandChild(child, after) {
   switch (child.type) {
     case "OneOrMany":
-      return expandRepeat(child.atom, 1, grammar)
+      return expandRepeat(child.atom, 1, after)
     case "ZeroOrMany":
-      return expandRepeat(child.atom, 0, grammar)
+      return expandRepeat(child.atom, 0, after)
     case "Optional":
-      return expandOptional(child.atom, grammar)
+      return expandOptional(child.atom, after)
     default:
       return buildChild(child)
   }
@@ -231,6 +237,7 @@ function fromParseTree(rules) {
     const name = rule.name
     const nodeType = buildType(rule)
     const children = []
+    const runAfter = []
 
     for (let child of rule.children) {
       if (child.type === "Key") {
@@ -242,7 +249,9 @@ function fromParseTree(rules) {
         semanticError(atom, "Direct recursion is not allowed")
       }
 
-      const result = expandChild(child, grammar)
+      const result = expandChild(child, cb => {
+        runAfter.push(cb)
+      })
 
       children.push(result)
     }
@@ -254,6 +263,11 @@ function fromParseTree(rules) {
     }
 
     grammar.add(info)
+
+    // Now we've added the rule, add any EBNF expansions
+    for (let cb of runAfter) {
+      cb(grammar)
+    }
   }
 
   return grammar

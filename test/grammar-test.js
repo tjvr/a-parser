@@ -164,6 +164,12 @@ test("optional name", t => {
   const grammar = expandRules([rule])
   t.deepEqual(grammar.rules, [
     {
+      name: "foo",
+      type: "root",
+      rootIndex: 0,
+      children: [{ type: "name", name: "bar?" }],
+    },
+    {
       name: "bar?",
       type: "root",
       rootIndex: 0,
@@ -174,12 +180,6 @@ test("optional name", t => {
       type: "null",
       children: [],
     },
-    {
-      name: "foo",
-      type: "root",
-      rootIndex: 0,
-      children: [{ type: "name", name: "bar?" }],
-    },
   ])
 })
 
@@ -187,6 +187,12 @@ test("optional token", t => {
   const rule = parseRule(t, `foo -> :"quxx"?`)
   const grammar = expandRules([rule])
   t.deepEqual(grammar.rules, [
+    {
+      name: "foo",
+      type: "root",
+      rootIndex: 0,
+      children: [{ type: "name", name: "%quxx?" }],
+    },
     {
       name: "%quxx?",
       type: "root",
@@ -198,12 +204,6 @@ test("optional token", t => {
       type: "null",
       children: [],
     },
-    {
-      name: "foo",
-      type: "root",
-      rootIndex: 0,
-      children: [{ type: "name", name: "%quxx?" }],
-    },
   ])
 })
 
@@ -211,6 +211,11 @@ test("generates optionals only once", t => {
   const rule = parseRule(t, `foo -> bar? bar?`)
   const grammar = expandRules([rule])
   t.deepEqual(grammar.rules, [
+    {
+      name: "foo",
+      type: "null",
+      children: [{ type: "name", name: "bar?" }, { type: "name", name: "bar?" }],
+    },
     {
       name: "bar?",
       type: "root",
@@ -222,11 +227,6 @@ test("generates optionals only once", t => {
       type: "null",
       children: [],
     },
-    {
-      name: "foo",
-      type: "null",
-      children: [{ type: "name", name: "bar?" }, { type: "name", name: "bar?" }],
-    },
   ])
 })
 
@@ -234,6 +234,11 @@ test("one or many name", t => {
   const rule = parseRule(t, `foo -> bar+`)
   const grammar = expandRules([rule])
   t.deepEqual(grammar.rules, [
+    {
+      name: "foo",
+      type: "null",
+      children: [{ type: "name", name: "bar+" }],
+    },
     {
       name: "bar+",
       type: "list",
@@ -246,11 +251,6 @@ test("one or many name", t => {
       listIndex: 0,
       rootIndex: 1,
       children: [{ type: "name", name: "bar+" }, { type: "name", name: "bar" }],
-    },
-    {
-      name: "foo",
-      type: "null",
-      children: [{ type: "name", name: "bar+" }],
     },
   ])
 })
@@ -269,4 +269,9 @@ test("warns for direct recursion", t => {
   t.throws(t => grammar.newGrammar(`foo -> foo+`), /^Direct recursion/)
   t.throws(t => grammar.newGrammar(`foo [] -> []:foo+`), /^Direct recursion/)
   t.notThrows(t => grammar.newGrammar(`foo -> "foo"`))
+})
+
+test("allows EBNF in the first rule", t => {
+  const g = grammar.newGrammar("foo -> bar+")
+  t.deepEqual(g.rules.map(rule => rule.name), ["foo", "bar+", "bar+"])
 })

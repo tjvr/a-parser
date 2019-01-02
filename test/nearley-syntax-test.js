@@ -1,6 +1,6 @@
 const test = require("ava")
 
-const nearley = require("nearley")
+const moo = require("moo")
 
 const meta = require("../grammar/meta")
 const grammar = require("../grammar/grammar")
@@ -59,4 +59,24 @@ test("parse meta-grammar with itself", t => {
   const nearleyTree = parseGrammarWithNearley(t, metaGrammarSource)
   const tree = parseTreeFromGrammarSource(metaGrammarSource)
   t.deepEqual(nearleyTree, tree.withoutRegions())
+})
+
+test("allow EBNF in first rule", t => {
+  const l = moo.compile({
+    " ": " ",
+    word: /[a-z]+/,
+  })
+  const g = newGrammar(`
+  program Program -> contents:words?
+  words [] -> []:words " " :word
+  words [] -> :word
+  word -> :"word"
+  `)
+  const p = nearleyParser(g)
+  p.reset()
+  l.reset(`foo bar`)
+  for (let tok of l) {
+    p.eat(tok)
+  }
+  t.deepEqual(p.result().contents[("foo", "bar")])
 })
