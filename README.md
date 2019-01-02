@@ -7,6 +7,10 @@ A _parser_ is used to turn text (such as the source code for a programming langu
 
 A parser is usually used with a _tokenizer_ (or "lexer"). The tokenizer does the "dumb" job of splitting the text into "words", called "tokens"; the parser does the "smart" job of recognising sequences of such tokens. We recommend [Moo](https://github.com/no-context/moo) as a very fast and friendly tokenizer.
 
+So, as far as this project is concerned: a Parser turns a stream of Tokens into a tree of Nodes.
+
+To construct a Parser, you create a Grammar, and then pick a _parsing algorithm_ to use.
+
 
 # Parse trees
 
@@ -187,4 +191,56 @@ In the expression `key:val+`, `key` will always contain a non-empty array.
 
 In the expression `key:val*`, `key` will always contain an array, but it may be empty.
 
+
+# Parsing
+
+There may be various parsing algorithms implemented. Initially there is a proof-of-concept parser which uses Nearley's implementation of the Earley algorithm.
+
+This project doesn't have a name yet, so the example below calls it `foo`. Using a parser will look something like this:
+
+```js
+const moo = require('moo')
+const grammar = require('foo') // import the core library
+const compileNearley = require('foo/compile-nearley') // import the Earley algorithm
+
+// Get our tokenizer ready
+const lexer = moo.compile(...)
+
+// Define our Grammar
+const myGrammar = foo.grammar(`
+  program -> :expr+
+
+  expr Quote -> "'" list:List
+  expr List -> "(" items:expr+ ")"
+  expr Atom -> name:"identifier"
+  expr Literal -> value:"number"
+  expr Literal -> value:"string"
+`)
+
+// Construct a Parser from our Grammar, using the Earley algorithm
+const parser = compileNearley(myGrammar)
+
+// Begin a new Parse
+parser.reset()
+
+// Tokenize the source code
+lexer.reset(source)
+
+for (let tok of lexer) {
+  // Feed each token to the parser
+  try {
+    parser.eat(tok)
+  } catch (err) {
+    throw new Error(lexer.formatError("syntax error: " + err.message))
+  }
+}
+
+// Get the final parse tree
+const parseTree
+try {
+  parseTree = parser.result()
+} catch (err) {
+  throw new Error(lexer.formatError("unexpected EOF: " + err.message))
+}
+```
 
