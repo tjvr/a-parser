@@ -237,9 +237,14 @@ function fromParseTree(rules) {
         child = child.match
       }
 
-      child = expandChild(child, grammar)
+      const atom = child.atom || child
+      if (rule.children.length === 1 && atom.name === name) {
+        semanticError(atom, "Direct recursion is not allowed")
+      }
 
-      children.push(child)
+      const result = expandChild(child, grammar)
+
+      children.push(result)
     }
 
     const info = {

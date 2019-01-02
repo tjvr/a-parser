@@ -260,3 +260,12 @@ test("multiple modifiers", t => {
   const grammar = expandRules(tree.rules)
   t.snapshot(grammar.rules)
 })
+
+test("warns for direct recursion", t => {
+  t.throws(t => grammar.newGrammar(`foo -> foo`), /^Direct recursion/)
+  t.throws(t => grammar.newGrammar(`foo -> :foo`), /^Direct recursion/)
+  t.throws(t => grammar.newGrammar(`foo Thing -> bar:foo`), /^Direct recursion/)
+  t.throws(t => grammar.newGrammar(`foo [] -> []:foo`), /^Direct recursion/)
+  t.throws(t => grammar.newGrammar(`foo -> foo+`), /^Direct recursion/)
+  t.throws(t => grammar.newGrammar(`foo [] -> []:foo+`), /^Direct recursion/)
+})

@@ -111,6 +111,10 @@ test("parses key modifier", t => {
   t.is(rule.children[0].match.atom.name, "quxx")
 })
 
+test("disallows multiple modifiers", t => {
+  t.throws(t => parseRule(t, `foo -> bar*?`), null, "Expected space (found ?)")
+})
+
 test("handles EOF", t => {
   parseGrammar(`foo -> bar`)
   parseGrammar(`foo -> "quxx"`)
