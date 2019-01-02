@@ -21,25 +21,18 @@ const lexer = moo.compile({
 
 const grammar = lib.newGrammar(`
 
-result Program -> lines:program
-
-program [] -> []:program ";"
-program [] -> []:program ";" :stmt
-program [] -> :stmt
-program [] ->
+program Program -> lines:statements
 
 expr IfElse -> "if" _ cond:expr _ "then" _ tval:expr _ "else" _ fval:expr
 //expr IfElse -> "if" _ cond:expr _ "then" _ tval:expr
 expr Number -> value:"number"
 expr Block -> "{" _ statements:statements _ "}"
 
-//statements [] -> []:statements "NL"+ :stmt
 statements [] -> []:statements ";" :stmt
-statements [] -> []:statements ";"
 statements [] -> :stmt
-statements [] ->
 
 stmt -> :expr
+stmt -> 
 
 _ -> _ "NL"
 _ ->
