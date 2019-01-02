@@ -275,3 +275,8 @@ test("allows EBNF in the first rule", t => {
   const g = grammar.newGrammar("foo -> bar+")
   t.deepEqual(g.rules.map(rule => rule.name), ["foo", "bar+", "bar+"])
 })
+
+test("sorts EBNF expansions to end", t => {
+  const g = grammar.newGrammar("foo -> bar+\nbar -> quxx*")
+  t.deepEqual(g.rules.map(rule => rule.name), ["foo", "bar", "bar+", "bar+", "quxx*", "quxx*"])
+})

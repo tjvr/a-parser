@@ -225,6 +225,7 @@ function buildChild(child) {
 
 function fromParseTree(rules) {
   const grammar = new Grammar()
+  const runAfter = []
 
   if (!Array.isArray(rules)) {
     assert.fail("Expected array of Nodes")
@@ -237,7 +238,6 @@ function fromParseTree(rules) {
     const name = rule.name
     const nodeType = buildType(rule)
     const children = []
-    const runAfter = []
 
     for (let child of rule.children) {
       if (child.type === "Key") {
@@ -263,11 +263,11 @@ function fromParseTree(rules) {
     }
 
     grammar.add(info)
+  }
 
-    // Now we've added the rule, add any EBNF expansions
-    for (let cb of runAfter) {
-      cb(grammar)
-    }
+  // Now we've added all the rules, add any EBNF expansions
+  for (let cb of runAfter) {
+    cb(grammar)
   }
 
   return grammar
