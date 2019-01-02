@@ -12,7 +12,7 @@
     "prettier": "^1.14.3"
   },
   "dependencies": {
-    "moo": "git+https://git@github.com/no-context/moo.git"
+    "moo": "git+https://git@github.com/no-context/moo.git#format-error-eof"
   },
   "pre-commit": "fmt-staged",
   "lint-staged": {
