@@ -268,4 +268,5 @@ test("warns for direct recursion", t => {
   t.throws(t => grammar.newGrammar(`foo [] -> []:foo`), /^Direct recursion/)
   t.throws(t => grammar.newGrammar(`foo -> foo+`), /^Direct recursion/)
   t.throws(t => grammar.newGrammar(`foo [] -> []:foo+`), /^Direct recursion/)
+  t.notThrows(t => grammar.newGrammar(`foo -> "foo"`))
 })
