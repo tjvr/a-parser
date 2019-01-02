@@ -26,7 +26,17 @@ class Parser {
 
   result() {
     const results = this.nearleyParser.finish()
+    if (results.length === 0) {
+      throw new Error("Unexpected EOF")
+    }
+    if (results.length > 1) {
+      throw new Error("Ambiguous")
+    }
     return results[0]
+  }
+
+  allResults() {
+    return this.nearleyParser.finish()
   }
 }
 
