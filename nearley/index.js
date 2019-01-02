@@ -4,7 +4,7 @@ const grammar = require("../grammar")
 
 const nearley = require("nearley")
 
-class Parser {
+class NearleyParser {
   constructor(g) {
     if (typeof g !== "object" || !(g instanceof grammar.Grammar)) {
       throw new Error("Expected a Grammar")
@@ -33,6 +33,20 @@ class Parser {
       throw new Error("Ambiguous")
     }
     return results[0]
+  }
+
+  expectedTypes() {
+    const p = this.nearleyParser
+    const column = p.table[p.current]
+    const types = new Set()
+    for (let state of column.scannable) {
+      const exp = state.rule.symbols[state.dot]
+      if (!exp.type) {
+        continue
+      }
+      types.add(exp.type)
+    }
+    return Array.from(types)
   }
 
   allResults() {
@@ -156,7 +170,7 @@ function nuller() {
 }
 
 function newParser(grammar) {
-  return new Parser(grammar)
+  return new NearleyParser(grammar)
 }
 
 module.exports = newParser

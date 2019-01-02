@@ -28,11 +28,12 @@ expr IfElse -> "if" _ cond:expr _ "then" _ tval:expr _ "else" _ fval:expr
 expr Number -> value:"number"
 expr Block -> "{" _ statements:statements _ "}"
 
+statements [] -> []:statements ";"
 statements [] -> []:statements ";" :stmt
 statements [] -> :stmt
+statements [] -> 
 
 stmt -> :expr
-stmt -> 
 
 _ -> _ "NL"
 _ ->
@@ -40,7 +41,6 @@ _ ->
 
 `)
 const parser = compileNearley(grammar)
-console.log("kk")
 
 function parse(source) {
   parser.reset()
@@ -55,7 +55,14 @@ function parse(source) {
     try {
       parser.eat(tok)
     } catch (err) {
-      throw new Error(lexer.formatError(tok, "Parse error"))
+      let msg = lexer.formatError(tok, "Parse error")
+      const tokenTypes = parser.expectedTypes()
+      if (tokenTypes.length === 1) {
+        msg += "\nExpected " + tokenTypes[0]
+      } else {
+        msg += "\nExpected one of " + tokenTypes.join(", ")
+      }
+      throw new Error(msg)
     }
   }
 
