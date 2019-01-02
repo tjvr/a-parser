@@ -15,7 +15,7 @@ function metaLex(source) {
 }
 
 test("lexes rule", t => {
-  t.deepEqual(metaLex(`foo [] -> bar:"quxx"\n// hello\n`), [
+  t.deepEqual(metaLex(`foo [] -> bar:"quxx"\n// hello\nquxx`), [
     "identifier foo",
     "list []",
     "arrow ->",
@@ -25,6 +25,7 @@ test("lexes rule", t => {
     "newline \n",
     "comment // hello",
     "newline \n",
+    "identifier quxx",
   ])
 })
 
