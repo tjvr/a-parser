@@ -9,7 +9,7 @@ class Grammar {
   }
 
   get(name) {
-    return this.rulesByName.get(name)
+    return this.rulesByName.get(name) || []
   }
 
   add(rule) {
@@ -139,14 +139,16 @@ function resultName(child, modifier) {
   return { type: "name", name: name + modifier }
 }
 
-function expandOptional(child, after) {
-  child = buildChild(child)
+function expandOptional(childNode, after) {
+  const child = buildChild(childNode.atom)
 
   const result = resultName(child, "?")
+  result._node = childNode
+
   const ruleName = result.name
 
   after(grammar => {
-    if (grammar.get(ruleName)) {
+    if (grammar.get(ruleName).length > 0) {
       return result
     }
 
@@ -165,16 +167,16 @@ function expandOptional(child, after) {
   return result
 }
 
-function expandRepeat(child, baseCase, after) {
-  child = buildChild(child)
+function expandRepeat(childNode, baseCase, after) {
+  const child = buildChild(childNode.atom)
 
   const result = resultName(child, baseCase ? "+" : "*")
-  result._node = child
+  result._node = childNode
 
   const ruleName = result.name
 
   after(grammar => {
-    if (grammar.get(ruleName)) {
+    if (grammar.get(ruleName).length > 0) {
       return result
     }
 
@@ -198,11 +200,11 @@ function expandRepeat(child, baseCase, after) {
 function expandChild(child, after) {
   switch (child.type) {
     case "OneOrMany":
-      return expandRepeat(child.atom, 1, after)
+      return expandRepeat(child, 1, after)
     case "ZeroOrMany":
-      return expandRepeat(child.atom, 0, after)
+      return expandRepeat(child, 0, after)
     case "Optional":
-      return expandOptional(child.atom, after)
+      return expandOptional(child, after)
     default:
       return buildChild(child)
   }
