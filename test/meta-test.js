@@ -109,6 +109,8 @@ test("parses key modifier", t => {
   t.is(rule.children[0].match.type, "Optional")
   t.is(rule.children[0].match.atom.type, "Token")
   t.is(rule.children[0].match.atom.name, "quxx")
+  t.is(rule.children[0].region.start.col, 8)
+  t.is(rule.children[0].match.region.start.col, 12)
 })
 
 test("disallows multiple modifiers", t => {

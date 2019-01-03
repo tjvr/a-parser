@@ -126,8 +126,9 @@ function parse(buffer) {
 
   function parseKey(start, key) {
     expect(":")
+    const atomStart = Pos.before(tok)
     const value = parseValue()
-    const match = parseModifier(value, start)
+    const match = parseModifier(value, atomStart)
     return node("Key", start, { key, match })
   }
 
