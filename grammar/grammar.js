@@ -169,6 +169,8 @@ function expandRepeat(child, baseCase, after) {
   child = buildChild(child)
 
   const result = resultName(child, baseCase ? "+" : "*")
+  result._node = child
+
   const ruleName = result.name
 
   after(grammar => {
@@ -212,14 +214,68 @@ function buildChild(child) {
       return {
         type: "token",
         name: child.name,
+        _node: child,
       }
     case "Name":
       return {
         type: "name",
         name: child.name,
+        _node: child,
       }
     default:
       assert.fail("Unexpected child type")
+  }
+}
+
+function stripNodes(grammar) {
+  for (let rule of grammar.rules) {
+    delete rule._node
+    for (let child of rule.children) {
+      delete child._node
+    }
+  }
+}
+
+function allChildren(name, singleChildMap, seen) {
+  const ruleChildren = singleChildMap.get(name)
+  if (!ruleChildren) {
+    return seen
+  }
+  for (let childName of ruleChildren.keys()) {
+    if (seen.has(childName)) {
+      continue
+    }
+    seen.set(childName, ruleChildren.get(childName))
+    allChildren(childName, singleChildMap, seen)
+  }
+  return seen
+}
+
+function typeCheck(grammar) {
+  const singleChildMap = new Map()
+
+  for (let rule of grammar.rules) {
+    const children = rule.children
+    const firstChild = children[0]
+
+    // Recursion check
+    if (children.length === 1 && firstChild.type === "name") {
+      if (!singleChildMap.has(rule.name)) {
+        singleChildMap.set(rule.name, new Map())
+      }
+      const nameMap = singleChildMap.get(rule.name)
+      if (!nameMap.has(firstChild.name)) {
+        nameMap.set(firstChild.name, firstChild._node)
+      }
+    }
+  }
+
+  for (let name of singleChildMap.keys()) {
+    let children = allChildren(name, singleChildMap, new Map())
+    if (children.has(name)) {
+      const node = children.get(name)
+      semanticError(node, "Cycle detected")
+    }
   }
 }
 
@@ -244,11 +300,6 @@ function fromParseTree(rules) {
         child = child.match
       }
 
-      const atom = child.atom || child
-      if (rule.children.length === 1 && atom.type === "Name" && atom.name === name) {
-        semanticError(atom, "Direct recursion is not allowed")
-      }
-
       const result = expandChild(child, cb => {
         runAfter.push(cb)
       })
@@ -260,6 +311,7 @@ function fromParseTree(rules) {
       name: rule.name,
       ...nodeType,
       children,
+      _node: rule,
     }
 
     grammar.add(info)
@@ -270,6 +322,9 @@ function fromParseTree(rules) {
     cb(grammar)
   }
 
+  typeCheck(grammar)
+
+  stripNodes(grammar)
   return grammar
 }
 

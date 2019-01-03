@@ -261,14 +261,21 @@ test("multiple modifiers", t => {
   t.snapshot(grammar.rules)
 })
 
-test("warns for direct recursion", t => {
-  t.throws(t => grammar.newGrammar(`foo -> foo`), /^Direct recursion/)
-  t.throws(t => grammar.newGrammar(`foo -> :foo`), /^Direct recursion/)
-  t.throws(t => grammar.newGrammar(`foo Thing -> bar:foo`), /^Direct recursion/)
-  t.throws(t => grammar.newGrammar(`foo [] -> []:foo`), /^Direct recursion/)
-  t.throws(t => grammar.newGrammar(`foo -> foo+`), /^Direct recursion/)
-  t.throws(t => grammar.newGrammar(`foo [] -> []:foo+`), /^Direct recursion/)
+test("detects direct recursion", t => {
+  const expectedError = /^Cycle detected/
+  t.throws(t => grammar.newGrammar(`foo -> foo`), expectedError)
+  t.throws(t => grammar.newGrammar(`foo -> :foo`), expectedError)
+  t.throws(t => grammar.newGrammar(`foo Thing -> bar:foo`), expectedError)
+  t.throws(t => grammar.newGrammar(`foo [] -> []:foo`), expectedError)
+  t.throws(t => grammar.newGrammar(`foo -> foo+`), expectedError)
+  t.throws(t => grammar.newGrammar(`foo [] -> []:foo+`), expectedError)
   t.notThrows(t => grammar.newGrammar(`foo -> "foo"`))
+})
+
+test("detects indirect recursion", t => {
+  t.throws(t => grammar.newGrammar(`A -> B\nB -> A`), /^Cycle detected[^]*B -> A/)
+  t.throws(t => grammar.newGrammar(`A -> B\nB -> C\nC -> A`), /^Cycle detected[^]*C -> A/)
+  t.notThrows(t => grammar.newGrammar(`A -> B\nB -> "(" A ")"`))
 })
 
 test("allows EBNF in the first rule", t => {
