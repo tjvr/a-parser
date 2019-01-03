@@ -104,23 +104,23 @@ test("warns for list children in object rule", t => {
 })
 
 test("builds null rule", t => {
-  const rule = parseRule(t, `foo -> bar "quxx"`)
+  const rule = parseRule(t, `foo -> "bar" "quxx"`)
   t.deepEqual(expandOneRule(t, rule), {
     name: "foo",
     type: "null",
-    children: [{ type: "name", name: "bar" }, { type: "token", name: "quxx" }],
+    children: [{ type: "token", name: "bar" }, { type: "token", name: "quxx" }],
   })
 })
 
 test("builds root rule", t => {
-  const rule = parseRule(t, `foo -> "(" :bar ")"`)
+  const rule = parseRule(t, `foo -> "(" :"bar" ")"`)
   t.deepEqual(expandOneRule(t, rule), {
     name: "foo",
     type: "root",
     rootIndex: 1,
     children: [
       { type: "token", name: "(" },
-      { type: "name", name: "bar" },
+      { type: "token", name: "bar" },
       { type: "token", name: ")" },
     ],
   })
@@ -145,7 +145,7 @@ test("builds object rule", t => {
 })
 
 test("builds list rule", t => {
-  const rule = parseRule(t, `xl [] -> []:xl "," :x`)
+  const rule = parseRule(t, `xl [] -> []:xl "," :"x"`)
   t.deepEqual(expandOneRule(t, rule), {
     name: "xl",
     type: "list",
@@ -154,14 +154,14 @@ test("builds list rule", t => {
     children: [
       { type: "name", name: "xl" },
       { type: "token", name: "," },
-      { type: "name", name: "x" },
+      { type: "token", name: "x" },
     ],
   })
 })
 
 test("optional name", t => {
-  const rule = parseRule(t, `foo -> :bar?`)
-  const grammar = expandRules([rule])
+  const tree = parseGrammar(`foo -> :bar?\nbar -> "b"`)
+  const grammar = expandRules(tree.rules)
   t.deepEqual(grammar.rules, [
     {
       name: "foo",
@@ -169,6 +169,7 @@ test("optional name", t => {
       rootIndex: 0,
       children: [{ type: "name", name: "bar?" }],
     },
+    { name: "bar", type: "null", children: [{ type: "token", name: "b" }] },
     {
       name: "bar?",
       type: "root",
@@ -208,14 +209,15 @@ test("optional token", t => {
 })
 
 test("generates optionals only once", t => {
-  const rule = parseRule(t, `foo -> bar? bar?`)
-  const grammar = expandRules([rule])
+  const tree = parseGrammar(`foo -> bar? bar?\nbar -> "b"`)
+  const grammar = expandRules(tree.rules)
   t.deepEqual(grammar.rules, [
     {
       name: "foo",
       type: "null",
       children: [{ type: "name", name: "bar?" }, { type: "name", name: "bar?" }],
     },
+    { name: "bar", type: "null", children: [{ type: "token", name: "b" }] },
     {
       name: "bar?",
       type: "root",
@@ -231,13 +233,18 @@ test("generates optionals only once", t => {
 })
 
 test("one or many name", t => {
-  const rule = parseRule(t, `foo -> bar+`)
-  const grammar = expandRules([rule])
+  const tree = parseGrammar(`foo -> bar+\nbar -> "b"`)
+  const grammar = expandRules(tree.rules)
   t.deepEqual(grammar.rules, [
     {
       name: "foo",
       type: "null",
       children: [{ type: "name", name: "bar+" }],
+    },
+    {
+      name: "bar",
+      type: "null",
+      children: [{ type: "token", name: "b" }],
     },
     {
       name: "bar+",
@@ -256,7 +263,7 @@ test("one or many name", t => {
 })
 
 test("multiple modifiers", t => {
-  const tree = parseGrammar(`foo -> bar+\nfoo -> bar?`)
+  const tree = parseGrammar(`foo -> bar+\nfoo -> bar?\nbar -> "b"`)
   const grammar = expandRules(tree.rules)
   t.snapshot(grammar.rules)
 })
@@ -279,11 +286,11 @@ test("detects indirect recursion", t => {
 })
 
 test("allows EBNF in the first rule", t => {
-  const g = grammar.newGrammar("foo -> bar+")
-  t.deepEqual(g.rules.map(rule => rule.name), ["foo", "bar+", "bar+"])
+  const g = grammar.newGrammar(`foo -> "bar"+`)
+  t.deepEqual(g.rules.map(rule => rule.name), ["foo", "%bar+", "%bar+"])
 })
 
 test("sorts EBNF expansions to end", t => {
-  const g = grammar.newGrammar("foo -> bar+\nbar -> quxx*")
-  t.deepEqual(g.rules.map(rule => rule.name), ["foo", "bar", "bar+", "bar+", "quxx*", "quxx*"])
+  const g = grammar.newGrammar(`foo -> "bar"+\nbar -> "quxx"*`)
+  t.deepEqual(g.rules.map(rule => rule.name), ["foo", "bar", "%bar+", "%bar+", "%quxx*", "%quxx*"])
 })

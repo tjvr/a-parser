@@ -270,6 +270,18 @@ function typeCheck(grammar) {
         nameMap.set(firstChild.name, firstChild._node)
       }
     }
+
+    // Check names are defined
+    for (let child of children) {
+      if (child.type !== "name") {
+        continue
+      }
+      const matchingRules = grammar.get(child.name)
+      if (matchingRules.length === 0) {
+        console.log(child, grammar.rulesByName[child.name], matchingRules)
+        semanticError(child._node, "Unknown name '" + child.name + "'")
+      }
+    }
   }
 
   for (let name of singleChildMap.keys()) {

@@ -38,16 +38,22 @@ function nearleyRules(grammar) {
 }
 
 test("null processor", t => {
-  const grammar = compile(`foo -> bar "quxx"`)
+  const grammar = compile(`foo -> bar "quxx"\nbar -> "b"`)
   t.deepEqual(nearleyRules(grammar), [
     { name: "foo", symbols: ["bar", { type: "quxx" }], process: "return null" },
+    { name: "bar", symbols: [{ type: "b" }], process: "return null" },
   ])
 })
 
 test("root processor", t => {
-  const grammar = compile(`foo -> "(" :bar ")"`)
+  const grammar = compile(`foo -> "(" :bar ")"\nbar -> "b"`)
   t.deepEqual(nearleyRules(grammar), [
-    { name: "foo", symbols: [{ type: "(" }, "bar", { type: ")" }], process: "return d[1]" },
+    {
+      name: "foo",
+      symbols: [{ type: "(" }, "bar", { type: ")" }],
+      process: "return d[1]",
+    },
+    { name: "bar", symbols: [{ type: "b" }], process: "return null" },
   ])
 })
 
@@ -63,35 +69,38 @@ test("root token", t => {
 })
 
 test("object processor", t => {
-  const grammar = compile(`foo Obj -> one:bar two:"quxx"`)
+  const grammar = compile(`foo Obj -> one:bar two:"quxx"\nbar -> "b"`)
   t.deepEqual(nearleyRules(grammar), [
     {
       name: "foo",
       symbols: ["bar", { type: "quxx" }],
       process: `return new Node("Obj", null, {\n"one": d[0],\n"two": d[1].value,\n})`,
     },
+    { name: "bar", symbols: [{ type: "b" }], process: "return null" },
   ])
 })
 
 test("object with no keys", t => {
-  const grammar = compile(`foo Obj -> bar "quxx"`)
+  const grammar = compile(`foo Obj -> bar "quxx"\nbar -> "b"`)
   t.deepEqual(nearleyRules(grammar), [
     {
       name: "foo",
       symbols: ["bar", { type: "quxx" }],
       process: `return new Node("Obj", null, {\n})`,
     },
+    { name: "bar", symbols: [{ type: "b" }], process: "return null" },
   ])
 })
 
 test("list processor", t => {
-  const grammar = compile(`statements [] -> []:statements ";" :stmt`)
+  const grammar = compile(`statements [] -> []:statements ";" :stmt\nstmt -> "x"`)
   t.deepEqual(nearleyRules(grammar), [
     {
       name: "statements",
       symbols: ["statements", { type: ";" }, "stmt"],
       process: `var list = d[0].slice()\nlist.push(d[2])\nreturn list`,
     },
+    { name: "stmt", symbols: [{ type: "x" }], process: "return null" },
   ])
 })
 
@@ -107,13 +116,14 @@ test("empty list", t => {
 })
 
 test("one-item list", t => {
-  const grammar = compile(`statements [] -> "~" :stmt`)
+  const grammar = compile(`statements [] -> "~" :stmt\nstmt -> "x"`)
   t.deepEqual(nearleyRules(grammar), [
     {
       name: "statements",
       symbols: [{ type: "~" }, "stmt"],
       process: `return [d[1]]`,
     },
+    { name: "stmt", symbols: [{ type: "x" }], process: "return null" },
   ])
 })
 
