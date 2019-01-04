@@ -285,6 +285,17 @@ test("detects indirect recursion", t => {
   t.notThrows(t => grammar.newGrammar(`A -> B\nB -> "(" A ")"`))
 })
 
+test("detects mixed list and object types", t => {
+  t.throws(
+    t => grammar.newGrammar(`a Thing ->\na [] ->`),
+    /^Can't have both object and list rules for 'a'/
+  )
+  t.throws(
+    t => grammar.newGrammar(`a [] ->\na Thing ->`),
+    /^Can't have both object and list rules for 'a'/
+  )
+})
+
 test("allows EBNF in the first rule", t => {
   const g = grammar.newGrammar(`foo -> "bar"+`)
   t.deepEqual(g.rules.map(rule => rule.name), ["foo", "%bar+", "%bar+"])

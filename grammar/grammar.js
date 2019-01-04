@@ -232,6 +232,7 @@ function buildChild(child) {
 function stripNodes(grammar) {
   for (let rule of grammar.rules) {
     delete rule._node
+    delete rule._typeNode
     for (let child of rule.children) {
       delete child._node
     }
@@ -260,7 +261,7 @@ function typeCheck(grammar) {
     const children = rule.children
     const firstChild = children[0]
 
-    // Recursion check
+    // Build recursion map
     if (children.length === 1 && firstChild.type === "name") {
       if (!singleChildMap.has(rule.name)) {
         singleChildMap.set(rule.name, new Map())
@@ -284,11 +285,29 @@ function typeCheck(grammar) {
     }
   }
 
+  // Check recursion map for cycles
   for (let name of singleChildMap.keys()) {
     let children = allChildren(name, singleChildMap, new Map())
     if (children.has(name)) {
       const node = children.get(name)
       semanticError(node, "Cycle detected")
+    }
+  }
+
+  // Check list and non-list types are not mixed
+  for (let [name, ruleSet] of grammar.rulesByName) {
+    let type = null
+    for (let rule of ruleSet) {
+      if (rule.type !== "object" && rule.type !== "list") {
+        continue
+      }
+      if (type === null) {
+        type = rule.type
+        continue
+      }
+      if (type !== rule.type) {
+        semanticError(rule._typeNode, "Can't have both object and list rules for '" + name + "'")
+      }
     }
   }
 }
@@ -326,6 +345,7 @@ function fromParseTree(rules) {
       ...nodeType,
       children,
       _node: rule,
+      _typeNode: rule.nodeType,
     }
 
     grammar.add(info)
