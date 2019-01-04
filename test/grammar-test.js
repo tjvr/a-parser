@@ -285,14 +285,26 @@ test("detects indirect recursion", t => {
   t.notThrows(t => grammar.newGrammar(`A -> B\nB -> "(" A ")"`))
 })
 
-test("detects mixed list and object types", t => {
+test("detects conflicting types", t => {
   t.throws(
     t => grammar.newGrammar(`a Thing ->\na [] ->`),
-    /^Can't have both object and list rules for 'a'/
+    /^Rule has type list but another rule has type object/
   )
   t.throws(
     t => grammar.newGrammar(`a [] ->\na Thing ->`),
-    /^Can't have both object and list rules for 'a'/
+    /^Rule has type object but another rule has type list/
+  )
+  t.throws(
+    t => grammar.newGrammar(`a [] ->\na -> :b\nb Thing ->`),
+    /^Rule has type object but another rule has type list/
+  )
+  t.throws(
+    t => grammar.newGrammar(`a Thing ->\na -> :"foo"`),
+    /^Rule has type string but another rule has type object/
+  )
+  t.throws(
+    t => grammar.newGrammar(`a -> :b\na -> :"foo"\nb [] ->`),
+    /^Rule has type string but another rule has type list/
   )
 })
 

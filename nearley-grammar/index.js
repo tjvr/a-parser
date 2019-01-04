@@ -75,7 +75,7 @@ expr [] -> :item
 expr [] -> []:expr ws :item
 
 // expr_member
-item -> :"word"
+item Word     -> word:"word"
 item Mixin    -> "$" mixin:"word"
 item Call     -> macrocall:"word" "[" args:args "]"
 item Literal  -> literal:string

@@ -239,7 +239,7 @@ function stripNodes(grammar) {
   }
 }
 
-function allChildren(name, singleChildMap, seen) {
+function allChildren(singleChildMap, seen, name) {
   const ruleChildren = singleChildMap.get(name)
   if (!ruleChildren) {
     return seen
@@ -249,9 +249,61 @@ function allChildren(name, singleChildMap, seen) {
       continue
     }
     seen.set(childName, ruleChildren.get(childName))
-    allChildren(childName, singleChildMap, seen)
+    allChildren(singleChildMap, seen, childName)
   }
   return seen
+}
+
+function nameType(typeMap, grammar, name) {
+  if (typeMap.has(name)) {
+    return typeMap.get(name)
+  }
+
+  const ruleSet = grammar.get(name)
+  if (ruleSet.length === 0) {
+    return "any"
+  }
+
+  let bestType = null
+  for (let rule of ruleSet) {
+    const type = ruleType(typeMap, grammar, rule)
+    if (type === "any") {
+      if (bestType === null) {
+        bestType = "any"
+      }
+    } else if (type === "null") {
+      bestType = "null"
+    } else {
+      bestType = type
+      break
+    }
+  }
+  typeMap.set(name, bestType)
+  return bestType
+}
+
+function ruleType(typeMap, grammar, rule) {
+  switch (rule.type) {
+    case "null":
+      return "null"
+    case "root":
+      const child = rule.children[rule.rootIndex]
+      switch (child.type) {
+        case "token":
+          return "string"
+        case "name":
+          return nameType(typeMap, grammar, child.name)
+        default:
+          assert.fail("Unexpected child type")
+      }
+      return compileRootProcessor(rule.rootIndex, rule.children)
+    case "object":
+      return "object"
+    case "list":
+      return "list"
+    default:
+      assert.fail("Unexpected rule type " + rule.type)
+  }
 }
 
 function typeCheck(grammar) {
@@ -287,27 +339,35 @@ function typeCheck(grammar) {
 
   // Check recursion map for cycles
   for (let name of singleChildMap.keys()) {
-    let children = allChildren(name, singleChildMap, new Map())
+    let children = allChildren(singleChildMap, new Map(), name)
     if (children.has(name)) {
       const node = children.get(name)
       semanticError(node, "Cycle detected")
     }
   }
 
+  // Build type map
+  const typeMap = new Map()
+  for (let name of grammar.rulesByName.keys()) {
+    nameType(typeMap, grammar, name)
+  }
+
   // Check list and non-list types are not mixed
   for (let [name, ruleSet] of grammar.rulesByName) {
-    let type = null
+    const expected = typeMap.get(name)
+
     for (let rule of ruleSet) {
-      if (rule.type !== "object" && rule.type !== "list") {
+      const actual = ruleType(typeMap, grammar, rule)
+      if (actual === "any" || actual === "null") {
         continue
       }
-      if (type === null) {
-        type = rule.type
+
+      if (actual === expected) {
         continue
       }
-      if (type !== rule.type) {
-        semanticError(rule._typeNode, "Can't have both object and list rules for '" + name + "'")
-      }
+
+      const node = rule._typeNode || rule._node
+      semanticError(node, "Rule has type " + actual + " but another rule has type " + expected)
     }
   }
 }
