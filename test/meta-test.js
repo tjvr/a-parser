@@ -18,7 +18,7 @@ test("lexes rule", t => {
   t.deepEqual(metaLex(`foo [] -> bar:"quxx"\n// hello\nquxx`), [
     "identifier foo",
     "list []",
-    "arrow ->",
+    "-> ->",
     "identifier bar",
     ": :",
     "string quxx",

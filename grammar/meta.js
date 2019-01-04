@@ -4,8 +4,7 @@ const { Node, Pos, Region } = require("./node")
 
 const lexer = moo.compile({
   newline: { match: "\n", lineBreaks: true },
-  _op: { match: [":", "?", "*", "+"], type: x => x },
-  arrow: "->",
+  _op: { match: [":", "?", "*", "+", "->"], type: x => x },
   list: "[]",
   string: { match: /"(?:\\["\\]|[^\n"\\])*"/, value: s => s.slice(1, -1) },
   space: /[ \t\f\r]+/,
@@ -24,7 +23,7 @@ blankLines -> blankLines "newline"
 rules [] -> []:rules "newline" blankLines :rule
 rules [] -> :rule
 
-rule Rule -> name:"identifier" nodeType:nodeType "arrow" children:children optionalSpace
+rule Rule -> name:"identifier" nodeType:nodeType "->" children:children optionalSpace
 
 optionalSpace -> "space"
 optionalSpace ->
@@ -201,11 +200,11 @@ function parse(buffer) {
     attrs.name = expect("identifier").value
     expect("space")
     attrs.nodeType = null
-    if (tok.type !== "arrow") {
+    if (tok.type !== "->") {
       attrs.nodeType = parseNodeType()
       expect("space")
     }
-    expect("arrow")
+    expect("->")
     attrs.children = []
     if (!tok || tok.type === "newline") {
       return new node("Rule", start, attrs)

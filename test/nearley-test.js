@@ -145,7 +145,7 @@ test("compile meta-grammar", t => {
     "rules → rules %newline blankLines rule",
     "rules → rule",
 
-    "rule → %identifier nodeType %arrow children optionalSpace",
+    "rule → %identifier nodeType %-> children optionalSpace",
 
     "optionalSpace → %space",
     "optionalSpace → ",
