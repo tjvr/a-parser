@@ -33,7 +33,7 @@ test("root type", t => {
 
 test("warns for multiple root children", t => {
   const rule = parseRule(t, `foo -> :bar "-" :quxx`)
-  t.throws(t => buildType(rule), /^Multiple root children/)
+  t.throws(t => buildType(rule), /^More than one root child/)
 })
 
 test("warns for named children in root rule", t => {
@@ -68,12 +68,12 @@ test("warns for named children in list rule", t => {
 
 test("warns for multiple list children", t => {
   const rule = parseRule(t, `xl [] -> []:xl []:xl`)
-  t.throws(t => buildType(rule), /^Multiple list children/)
+  t.throws(t => buildType(rule), /^More than one list child/)
 })
 
 test("warns for multiple root children in list rule", t => {
   const rule = parseRule(t, `xl [] -> :x :x`)
-  t.throws(t => buildType(rule), /^Multiple root children/)
+  t.throws(t => buildType(rule), /^More than one root child/)
 })
 
 test("object type", t => {

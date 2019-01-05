@@ -22,13 +22,157 @@ class Grammar {
     ruleSet.push(rule)
     this.rules.push(rule)
   }
+
+  format() {
+    const ruleGroups = []
+    let group
+    let lastName
+    for (let rule of this.rules) {
+      if (rule.name !== lastName) {
+        group = []
+        ruleGroups.push(group)
+        lastName = rule.name
+      }
+      group.push(rule)
+    }
+
+    let s = ""
+    for (let group of ruleGroups) {
+      if (s.length) {
+        s += "\n"
+      }
+
+      let arrowCol = 0
+      for (let rule of group) {
+        arrowCol = Math.max(arrowCol, formatRulePrefix(rule).length)
+      }
+
+      for (let rule of group) {
+        s += formatRule(rule, arrowCol) + "\n"
+      }
+    }
+    return s
+  }
 }
 
-function semanticError(node, message) {
-  throw new Error(node.formatError(message))
+function formatRulePrefix(rule) {
+  switch (rule.type) {
+    case "object":
+      return rule.name + " " + rule.object
+    case "list":
+      return rule.name + " []"
+    case "root":
+    case "null":
+      return rule.name
+    default:
+      assert.fail("Unexpected rule type " + rule.type)
+  }
 }
 
-function buildRootType(children) {
+function formatRule(rule, arrowCol) {
+  let s = formatRulePrefix(rule)
+  while (s.length < arrowCol) {
+    s += " "
+  }
+  s += " ->"
+  for (let index = 0; index < rule.children.length; index++) {
+    const child = rule.children[index]
+    s += " " + formatChildPrefix(child, index, rule) + formatAtom(child)
+  }
+  return s
+}
+
+function formatChildPrefix(child, childIndex, rule) {
+  switch (rule.type) {
+    case "object":
+      for (let key of Object.keys(rule.keys)) {
+        const keyIndex = rule.keys[key]
+        if (keyIndex === childIndex) {
+          return key + ":"
+        }
+      }
+      return ""
+    case "list":
+      if (rule.listIndex === childIndex) {
+        return "[]:"
+      } else if (rule.rootIndex === childIndex) {
+        return ":"
+      }
+      return ""
+    case "root":
+      if (rule.rootIndex === childIndex) {
+        return ":"
+      }
+      return ""
+    case "null":
+      return ""
+    default:
+      assert.fail("Unexpected rule type " + rule.type)
+  }
+}
+
+function formatAtom(child) {
+  switch (child.type) {
+    case "name":
+      return child.name
+    case "token":
+      return JSON.stringify(child.name)
+    default:
+      assert.fail("Unexpected child type " + child.type)
+  }
+}
+
+function semanticError(node, message, extra) {
+  throw new Error(node.formatError(message) + (extra ? "\n" + extra : "") + "\n")
+}
+
+function formatRuleNode(rule) {
+  let s = ""
+  s += rule.name
+  if (rule.nodeType && rule.nodeType.type === "Name") {
+    s += " " + rule.nodeType.name
+  } else if (rule.nodeType && rule.nodeType.type === "List") {
+    s += " []"
+  }
+  s += " ->"
+  for (let child of rule.children) {
+    s += " " + formatChildNode(child)
+  }
+  return s
+}
+
+function formatChildNode(child) {
+  let s = ""
+  switch (child.type) {
+    case "ZeroOrMany":
+      return formatChildNode(child.atom) + "*"
+    case "OneOrMany":
+      return formatChildNode(child.atom) + "+"
+    case "Optional":
+      return formatChildNode(child.atom) + "?"
+    case "Key":
+      switch (child.key.type) {
+        case "Root":
+          return ":" + formatChildNode(child.match)
+        case "List":
+          return "[]:" + formatChildNode(child.match)
+        case "Name":
+          return child.key.name + ":" + formatChildNode(child.match)
+        default:
+          assert.fail("Unknown Key type")
+      }
+    case "Token":
+      return JSON.stringify(child.name)
+    case "Name":
+      return child.name
+    default:
+      assert.fail("Unexpected child type " + child.type)
+  }
+}
+
+function buildRootType(rule) {
+  const children = rule.children
+
   let rootIndex = -1
 
   for (var i = 0; i < children.length; i++) {
@@ -39,15 +183,32 @@ function buildRootType(children) {
 
     switch (child.key.type) {
       case "List":
-        semanticError(child, "List child in non-list rule")
+        rule.nodeType = { type: "List" }
+        semanticError(
+          child,
+          "List child in non-list rule",
+          "Hint: add the list marker to the rule:\n\n  " + formatRuleNode(rule)
+        )
       case "Root":
         break // continue
       default:
-        semanticError(child, "Named child in rule without node type")
+        rule.nodeType = { type: "Name", name: "[Object]" }
+        semanticError(
+          child.key,
+          "Named child in rule without node type",
+          "Hint: add an object name to the rule:\n\n  " + formatRuleNode(rule)
+        )
     }
 
     if (rootIndex !== -1) {
-      semanticError(child, "Multiple root children")
+      rule.nodeType = { type: "Name", name: "[Object]" }
+      children[rootIndex].key = { type: "Name", name: "[foo]" }
+      child.key = { type: "Name", name: "[bar]" }
+      semanticError(
+        child,
+        "More than one root child",
+        "Hint: make this an object rule:\n\n  " + formatRuleNode(rule)
+      )
     }
     rootIndex = i
   }
@@ -58,7 +219,9 @@ function buildRootType(children) {
   return { type: "root", rootIndex }
 }
 
-function buildListType(children) {
+function buildListType(rule) {
+  const children = rule.children
+
   const nodeType = { type: "list" }
 
   for (var i = 0; i < children.length; i++) {
@@ -70,27 +233,62 @@ function buildListType(children) {
     switch (child.key.type) {
       case "Root":
         if (nodeType.rootIndex !== undefined) {
-          semanticError(child, "Multiple root children")
+          if (nodeType.listIndex === undefined) {
+            child.key = { type: "List" }
+            semanticError(
+              child,
+              "More than one root child",
+              "Hint: make this the list child?\n\n  " + formatRuleNode(rule)
+            )
+          }
+          children[i] = child.match
+          semanticError(
+            child,
+            "More than one root child",
+            "Hint: list rules have up to one list child and one root child.\n\n  " +
+              formatRuleNode(rule)
+          )
         }
         nodeType.rootIndex = i
         break
 
       case "List":
         if (nodeType.listIndex !== undefined) {
-          semanticError(child, "Multiple list children")
+          if (nodeType.rootIndex === undefined) {
+            child.key = { type: "Root" }
+            semanticError(
+              child,
+              "More than one list child",
+              "Hint: make this the root child?\n\n  " + formatRuleNode(rule)
+            )
+          }
+          children[i] = child.match
+          semanticError(
+            child,
+            "More than one list child",
+            "Hint: list rules have up to one list child and one root child.\n\n  " +
+              formatRuleNode(rule)
+          )
         }
         nodeType.listIndex = i
         break
 
       default:
-        semanticError(child, "Named child in list rule")
+        child.key = { type: "List" }
+        semanticError(
+          child,
+          "Named child in list rule",
+          "Hint: make this the list child?\n\n  " + formatRuleNode(rule)
+        )
     }
   }
 
   return nodeType
 }
 
-function buildObjectType(name, children) {
+function buildObjectType(rule) {
+  const name = rule.nodeType.name
+  const children = rule.children
   const keys = {}
 
   for (var i = 0; i < children.length; i++) {
@@ -101,9 +299,19 @@ function buildObjectType(name, children) {
 
     switch (child.key.type) {
       case "Root":
-        semanticError(child, "Root child in object rule")
+        child.key = { type: "Name", name: "[name]" }
+        semanticError(
+          child,
+          "Root child in object rule",
+          "Hint: add an attribute name to the child:\n\n  " + formatRuleNode(rule)
+        )
       case "List":
-        semanticError(child, "List child in object rule")
+        rule.nodeType = { type: "List" }
+        semanticError(
+          child,
+          "List child in object rule",
+          "Hint: list children are only allowed in list rules:\n\n  " + formatRuleNode(rule)
+        )
       case "Name":
         break // continue
       default:
@@ -126,11 +334,11 @@ function buildType(rule) {
   const type = rule.nodeType ? rule.nodeType.type : "Default"
   switch (type) {
     case "Default":
-      return buildRootType(rule.children)
+      return buildRootType(rule)
     case "List":
-      return buildListType(rule.children)
+      return buildListType(rule)
     case "Name":
-      return buildObjectType(rule.nodeType.name, rule.children)
+      return buildObjectType(rule)
   }
 }
 
@@ -331,8 +539,11 @@ function typeCheck(grammar) {
       }
       const matchingRules = grammar.get(child.name)
       if (matchingRules.length === 0) {
-        console.log(child, grammar.rulesByName[child.name], matchingRules)
-        semanticError(child._node, "Unknown name '" + child.name + "'")
+        semanticError(
+          child._node,
+          "Unknown name '" + child.name + "'",
+          "Hint: add a rule like:\n\n  " + child.name + " -> ...\n"
+        )
       }
     }
   }
