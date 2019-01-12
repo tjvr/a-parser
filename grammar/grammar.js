@@ -500,6 +500,10 @@ function ruleType(typeMap, grammar, rule) {
         case "token":
           return "string"
         case "name":
+          // Avoid infinite recursion!
+          if (rule.name === child.name) {
+            return "any"
+          }
           return nameType(typeMap, grammar, child.name)
         default:
           assert.fail("Unexpected child type")
