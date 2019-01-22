@@ -1,24 +1,97 @@
 const assert = require("assert")
 
 const grammar = require("../grammar")
+const { Node } = require("../grammar")
 
 class LR0Parser {
-  constructor(g) {
-    if (typeof g !== "object" || !(g instanceof grammar.Grammar)) {
-      throw new Error("Expected a Grammar")
-    }
-    this.grammar = g
+  constructor(grammar) {
+    this.grammar = grammar
+    this.states = generateStates(grammar)
     this.reset()
   }
 
-  reset() {}
+  reset() {
+    this.stateIndex = 0
+    this.stack = []
+    this.stateStack = []
+  }
+
+  _reduce(rule) {
+    if (this.stack.length < rule.children.length) {
+      assert.fail("Stack not big enough")
+    }
+
+    const pastStates = this.stateStack.splice(this.stateStack.length - rule.children.length)
+    this.stateIndex = pastStates[0]
+    //console.log(`reduce ${rule.name} (${rule.children.length}) -> ${this.stateIndex}`)
+
+    const children = this.stack.splice(this.stack.length - rule.children.length)
+    switch (rule.type) {
+      case "null":
+        return null
+      case "object":
+        const keyIndexes = rule.keys
+        const keys = {}
+        for (const key of Object.getOwnPropertyNames(keyIndexes)) {
+          const index = keyIndexes[key]
+          keys[key] = children[index]
+        }
+        const region = null // TODO
+        return new Node(rule.object, region, keys)
+      case "root":
+        return children[rule.rootIndex]
+      case "list":
+        if (rule.rootIndex !== undefined && rule.listIndex !== undefined) {
+          const list = children[rule.listIndex]
+          list.push(children[rule.rootIndex])
+          return list
+        } else if (rule.rootIndex !== undefined) {
+          return [children[rule.rootIndex]]
+        } else if (rule.listIndex !== undefined) {
+          return children[rule.listIndex]
+        } else {
+          return []
+        }
+      default:
+        assert.fail("Unknown rule type " + rule.type)
+    }
+  }
+
+  get state() {
+    return this.states[this.stateIndex]
+  }
+
+  _shift(name, value) {
+    const t = this.state.transitions.get(name)
+    if (t == null) {
+      return false
+    }
+    this.stateStack.push(this.stateIndex)
+    this.stack.push(value)
+    this.stateIndex = t.index
+    //console.log(`shift ${name} -> ${t.index}`)
+    return true
+  }
 
   eat(tok) {
-    // TODO feed tok
+    if (!this._shift("%" + tok.type, tok)) {
+      throw new Error('Unexpected "' + tok.type + '"')
+    }
+
+    while (this.state.reduction) {
+      const rule = this.state.reduction
+      const value = this._reduce(rule)
+      if (!this._shift(rule.name, value)) {
+        assert.fail("This should never happen")
+      }
+    }
   }
 
   result() {
-    // TODO
+    if (this.stateIndex !== 1) {
+      throw new Error("Unexpected EOF")
+    }
+    return this.stack[0]
   }
 
   expectedTypes() {
@@ -94,6 +167,13 @@ class State {
 
     /* A map of token names -> States */
     this.transitions = new Map()
+
+    this.reductions = []
+    for (let item of items) {
+      if (item.advance === null) {
+        this.reductions.push(item)
+      }
+    }
   }
 }
 
@@ -191,7 +271,7 @@ function graphviz(states) {
 }
 
 /*
- * Each LR0 state is generated in three steps:
+ * Each state is generated in three steps:
  *
  *   - start with a "seed" or "kernel" of LR0 items.
  *   - add any LR0 items which expect a non-terminal.
@@ -200,7 +280,7 @@ function graphviz(states) {
  *
  * States with the same seed are collapsed into one, since they are identical.
  */
-function compile(grammar) {
+function generateStates(grammar) {
   const acceptRule = {
     accept: true,
     name: "$",
@@ -245,9 +325,31 @@ function compile(grammar) {
   states[1].index = acceptingState.index
   acceptingState.index = 1
 
-  const fs = require("fs")
-  fs.writeFileSync(grammar.start + ".dot", graphviz(states))
+  for (let state of states) {
+    if (state.index === 1) {
+      continue
+    }
 
+    if (state.reductions.length > 0) {
+      if (state.reductions.length > 1) {
+        throw new Error("reduce/reduce conflict")
+      }
+      state.reduction = state.reductions[0].rule
+    }
+
+    // TODO
+    // if (state.reductions.length > 0 && state.transitions.length > 0) {
+    //   throw new Error("shift/reduce conflict")
+    // }
+  }
+
+  // const fs = require("fs")
+  // fs.writeFileSync(grammar.start + ".dot", graphviz(states))
+
+  return states
+}
+
+function compile(grammar) {
   return new LR0Parser(grammar)
 }
 

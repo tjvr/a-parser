@@ -20,10 +20,14 @@ const lexer = moo.compile({
   NULL: /null\b/,
 })
 
+// This JSON grammar has been slightly modified to remove nullable rules, so
+// that the naive LR0 parser works properly.
 const grammar = newGrammar(`
 
 json Object -> "{" items:items "}"
+json Object -> "{" "}"
 json Array -> "[" items:array "]"
+json Array -> "[" "]"
 json String -> value:"STRING"
 json Number -> value:"NUMBER"
 json Bool   -> value:"TRUE"
@@ -32,11 +36,11 @@ json Null   -> "NULL"
 
 items [] -> []:items "," :item
 items [] -> :item
-items [] ->
+//items [] ->
 
 array [] -> []:array "," :json
 array [] -> :json
-array [] ->
+//array [] ->
 
 item Item -> key:"STRING" ":" value:json
 
