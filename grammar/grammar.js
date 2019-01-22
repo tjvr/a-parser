@@ -8,6 +8,10 @@ class Grammar {
     this.rules = []
   }
 
+  get start() {
+    return this.rules[0].name
+  }
+
   get(name) {
     return this.rulesByName.get(name) || []
   }
