@@ -242,6 +242,8 @@ function compile(grammar) {
   // acceptingState will usually have index 1, but this depends on Map
   // iteration order so it's not guaranteed.
   const acceptingState = startState.transitions.get(grammar.start)
+  states[1].index = acceptingState.index
+  acceptingState.index = 1
 
   const fs = require("fs")
   fs.writeFileSync(grammar.start + ".dot", graphviz(states))
