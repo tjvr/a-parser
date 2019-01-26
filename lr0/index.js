@@ -341,12 +341,11 @@ function compileReducer(rule) {
   //source += "throw new Error('Internal error') "
   //source += "}\n"
 
-  if (children.length === 1) {
-    source += "this.state = this.pastStates.pop()\n"
-  } else {
-    source +=
-      "this.state = this.pastStates.splice(this.pastStates.length - " + children.length + ")[0]\n"
+  for (let index = children.length; index > 1; index--) {
+    source += "this.pastStates.pop()\n"
   }
+  source += "this.state = this.pastStates.pop()\n"
+
   for (let index = children.length - 1; index >= 0; index--) {
     source += "var c" + index + " = this.stack.pop()\n"
   }
