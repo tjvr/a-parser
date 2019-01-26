@@ -17,47 +17,6 @@ class LR0Parser {
     this.stack = []
   }
 
-  _reduce(rule) {
-    if (this.stack.length < rule.children.length) {
-      assert.fail("Stack not big enough")
-    }
-
-    const pastStates = this.pastStates.splice(this.pastStates.length - rule.children.length)
-    this.state = pastStates[0]
-    //console.log(`reduce ${rule.name} (${rule.children.length}) -> ${this.stateIndex}`)
-
-    const children = this.stack.splice(this.stack.length - rule.children.length)
-    switch (rule.type) {
-      case "null":
-        return null
-      case "object":
-        const keyIndexes = rule.keys
-        const keys = {}
-        for (const key of Object.getOwnPropertyNames(keyIndexes)) {
-          const index = keyIndexes[key]
-          keys[key] = children[index]
-        }
-        const region = null // TODO
-        return new Node(rule.object, region, keys)
-      case "root":
-        return children[rule.rootIndex]
-      case "list":
-        if (rule.rootIndex !== undefined && rule.listIndex !== undefined) {
-          const list = children[rule.listIndex]
-          list.push(children[rule.rootIndex])
-          return list
-        } else if (rule.rootIndex !== undefined) {
-          return [children[rule.rootIndex]]
-        } else if (rule.listIndex !== undefined) {
-          return children[rule.listIndex]
-        } else {
-          return []
-        }
-      default:
-        assert.fail("Unknown rule type " + rule.type)
-    }
-  }
-
   eat(tok) {
     const index = this.state.eatToken.call(this, tok.type)
     if (index === -1) {
@@ -68,7 +27,17 @@ class LR0Parser {
     this.state = this.states[index]
 
     while (this.state.reduce) {
-      this.state.reduce.call(this)
+      const name = this.state.name
+      const value = this.state.reduce.call(this)
+
+      const index = this.state.eatName.call(this, name)
+      if (index === -1) {
+        throw new Error("Internal error")
+      }
+
+      this.pastStates.push(this.state)
+      this.stack.push(value)
+      this.state = this.states[index]
     }
   }
 
@@ -367,23 +336,56 @@ function compileNameSwitch(transitions) {
   return Function("name", source)
 }
 
+function compileReducer(rule) {
+  return function() {
+    if (this.stack.length < rule.children.length) {
+      assert.fail("Stack not big enough")
+    }
+
+    const pastStates = this.pastStates.splice(this.pastStates.length - rule.children.length)
+    this.state = pastStates[0]
+    //console.log(`reduce ${rule.name} (${rule.children.length}) -> ${this.stateIndex}`)
+
+    const children = this.stack.splice(this.stack.length - rule.children.length)
+    switch (rule.type) {
+      case "null":
+        return null
+      case "object":
+        const keyIndexes = rule.keys
+        const keys = {}
+        for (const key of Object.getOwnPropertyNames(keyIndexes)) {
+          const index = keyIndexes[key]
+          keys[key] = children[index]
+        }
+        const region = null // TODO
+        return new Node(rule.object, region, keys)
+      case "root":
+        return children[rule.rootIndex]
+      case "list":
+        if (rule.rootIndex !== undefined && rule.listIndex !== undefined) {
+          const list = children[rule.listIndex]
+          list.push(children[rule.rootIndex])
+          return list
+        } else if (rule.rootIndex !== undefined) {
+          return [children[rule.rootIndex]]
+        } else if (rule.listIndex !== undefined) {
+          return children[rule.listIndex]
+        } else {
+          return []
+        }
+      default:
+        assert.fail("Unknown rule type " + rule.type)
+    }
+  }
+}
+
 function compileState(state) {
   if (state.reduction) {
     const rule = state.reduction
     return {
       eat: null,
-      reduce: function() {
-        const value = this._reduce(rule)
-
-        const index = this.state.eatName.call(this, rule.name)
-        if (index === -1) {
-          throw new Error("Internal error")
-        }
-
-        this.pastStates.push(this.state)
-        this.stack.push(value)
-        this.state = this.states[index]
-      },
+      name: rule.name,
+      reduce: compileReducer(rule),
       items: state.items.slice(),
       index: state.index,
     }
