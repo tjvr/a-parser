@@ -18,26 +18,25 @@ class LR0Parser {
   }
 
   eat(tok) {
-    const index = this.state.eatToken.call(this, tok.type)
-    if (index === -1) {
+    const nextState = this.state.eatToken.call(this, tok.type)
+    if (nextState === null) {
       throw new Error("Unexpected token '" + tok.type + "'")
     }
     this.pastStates.push(this.state)
     this.stack.push(tok.value)
-    this.state = this.states[index]
+    this.state = nextState
 
     while (this.state.reduce) {
       const name = this.state.name
       const value = this.state.reduce.call(this)
 
-      const index = this.state.eatName.call(this, name)
-      if (index === -1) {
-        throw new Error("Internal error")
+      const nextState = this.state.eatName.call(this, name)
+      if (nextState === null) {
+        throw new Error("Internal error: no state")
       }
-
       this.pastStates.push(this.state)
       this.stack.push(value)
-      this.state = this.states[index]
+      this.state = nextState
     }
   }
 
@@ -309,11 +308,11 @@ function compileTokenSwitch(transitions) {
   for (let [name, t] of transitions) {
     if (name[0] !== "%") continue
     source += "case " + JSON.stringify(name.slice(1)) + ": "
-    source += "return " + t.index + "\n"
+    source += "return s" + t.index + "\n"
   }
-  source += "default: return -1\n"
+  source += "default: return null\n"
   source += "}\n"
-  return Function("type", source)
+  return source
 }
 
 function compileNameSwitch(transitions) {
@@ -322,18 +321,14 @@ function compileNameSwitch(transitions) {
   for (let [name, t] of transitions) {
     if (name[0] === "%") continue
     source += "case " + JSON.stringify(name) + ": "
-    source += "return " + t.index + "\n"
+    source += "return s" + t.index + "\n"
   }
-  source += "default: return -1\n"
+  source += "default: return null\n"
   source += "}\n"
-  return Function("name", source)
+  return source
 }
 
 function compileReducer(rule) {
-  if (rule._lr0Reducer) {
-    return rule._lr0Reducer
-  }
-
   const children = rule.children
   let source = ""
 
@@ -385,10 +380,7 @@ function compileReducer(rule) {
     default:
       throw new Error("Unknown rule type " + rule.type)
   }
-
-  const reducer = evalProcessor(source)
-  rule._lr0Reducer = reducer
-  return reducer
+  return source
 }
 
 function compileState(state) {
@@ -412,18 +404,39 @@ function compileState(state) {
   }
 }
 
-function evalProcessor(source) {
+function compileStates(states) {
+  let source = ""
+
+  for (let state of states) {
+    source += "var s" + state.index + " = {\n"
+    source += "index: " + state.index + ",\n"
+    if (state.reduction) {
+      const rule = state.reduction
+      source += "name: " + JSON.stringify(rule.name) + ",\n"
+      source += "reduce: function() {\n" + compileReducer(rule) + "},\n"
+    } else {
+      source += "eatToken: function(type) {\n" + compileTokenSwitch(state.transitions) + "},\n"
+      source += "eatName: function(name) {\n" + compileNameSwitch(state.transitions) + "},\n"
+    }
+    source += "}\n"
+    source += "\n"
+  }
+
+  source += "return[\n"
+  for (let state of states) {
+    source += "s" + state.index + ",\n"
+  }
+  source += "]\n"
+
+  return evalWithNode(source)
+}
+
+function evalWithNode(source) {
   // import the Node class into the scope of eval()
   const { Node } = require("../grammar")
 
-  // NB we could cache these functions, to reduce the amount of work that
-  // the JIT has to do. Some processors (e.g. the root processor) may
-  // occur multiple times
-  return eval("(function () {\n" + source + "\n})")
-}
-
-function compileStates(states) {
-  return states.map(s => compileState(s))
+  // IIFE
+  return eval("(function() {\n" + source + "\n}())")
 }
 
 function compile(grammar) {
