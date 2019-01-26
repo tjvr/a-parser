@@ -337,9 +337,9 @@ function compileReducer(rule) {
   const children = rule.children
   let source = ""
 
-  //source += "if (this.stack.length < " + children.length + ") { "
-  //source += "throw new Error('Internal error') "
-  //source += "}\n"
+  source += "if (this.stack.length < " + children.length + ") { "
+  source += "throw new Error('Internal error') "
+  source += "}\n"
 
   for (let index = children.length; index > 1; index--) {
     source += "this.pastStates.pop()\n"
