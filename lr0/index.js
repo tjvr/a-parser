@@ -330,12 +330,16 @@ function compileNameSwitch(transitions) {
 }
 
 function compileReducer(rule) {
+  if (rule._lr0Reducer) {
+    return rule._lr0Reducer
+  }
+
   const children = rule.children
   let source = ""
 
-  source += "if (this.stack.length < " + children.length + ") { "
-  source += "throw new Error('Internal error') "
-  source += "}\n"
+  //source += "if (this.stack.length < " + children.length + ") { "
+  //source += "throw new Error('Internal error') "
+  //source += "}\n"
 
   if (children.length === 1) {
     source += "this.state = this.pastStates.pop()\n"
@@ -343,15 +347,17 @@ function compileReducer(rule) {
     source +=
       "this.state = this.pastStates.splice(this.pastStates.length - " + children.length + ")[0]\n"
   }
-  source += "var children = this.stack.splice(this.stack.length - " + children.length + ")\n"
-  source += "\n"
+  for (let index = children.length - 1; index >= 0; index--) {
+    source += "var c" + index + " = this.stack.pop()\n"
+  }
+  const childAt = index => "c" + index
 
   switch (rule.type) {
     case "null":
       source += "return null\n"
       break
     case "root":
-      source += "return children[" + rule.rootIndex + "]\n"
+      source += "return " + childAt(rule.rootIndex) + "\n"
       break
     case "object":
       const keyIndexes = rule.keys
@@ -359,20 +365,20 @@ function compileReducer(rule) {
       const keyNames = Object.getOwnPropertyNames(keyIndexes)
       for (const key of keyNames) {
         const index = keyIndexes[key]
-        source += JSON.stringify(key) + ": children[" + index + "],\n"
+        source += JSON.stringify(key) + ": " + childAt(index) + ",\n"
       }
       source += "})\n"
       break
     case "list":
       if (rule.rootIndex !== undefined && rule.listIndex !== undefined) {
-        source += "var list = children[" + rule.listIndex + "]\n"
-        source += "list.push(children[" + rule.rootIndex + "])\n"
-        source += "return list"
+        source += "var list = " + childAt(rule.listIndex) + "\n"
+        source += "list.push(" + childAt(rule.rootIndex) + ")\n"
+        source += "return list\n"
       } else if (rule.rootIndex !== undefined) {
         // Wrap the item in a list
-        source += "return [children[" + rule.rootIndex + "]]\n"
+        source += "return [" + childAt(rule.rootIndex) + "]\n"
       } else if (rule.listIndex !== undefined) {
-        source += "return children[" + rule.listIndex + "]\n"
+        source += "return " + childAt(rule.listIndex) + "\n"
       } else {
         source += "return []\n"
       }
@@ -380,7 +386,10 @@ function compileReducer(rule) {
     default:
       throw new Error("Unknown rule type " + rule.type)
   }
-  return evalProcessor(source)
+
+  const reducer = evalProcessor(source)
+  rule._lr0Reducer = reducer
+  return reducer
 }
 
 function compileState(state) {
