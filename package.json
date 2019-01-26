@@ -2,10 +2,12 @@
   "scripts": {
     "test": "ava",
     "fmt": "prettier --write *.js */*.js",
-    "fmt-staged": "lint-staged"
+    "fmt-staged": "lint-staged",
+    "benchmark": "benchr benchmark/benchmark.js"
   },
   "devDependencies": {
     "ava": "1.0.0-beta.8",
+    "benchr": "^3.4.0",
     "lint-staged": "^7.3.0",
     "nearley": "^2.15.1",
     "pre-commit": "^1.2.2",
