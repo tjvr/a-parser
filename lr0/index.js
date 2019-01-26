@@ -59,7 +59,14 @@ class LR0Parser {
   }
 
   eat(tok) {
-    this.state.eatToken.call(this, tok)
+    const index = this.state.eatToken.call(this, tok.type)
+    if (index === -1) {
+      throw new Error("Unexpected token '" + tok.type + "'")
+    }
+    this.pastStates.push(this.state)
+    this.stack.push(tok.value)
+    this.state = this.states[index]
+
     while (this.state.reduce) {
       this.state.reduce.call(this)
     }
@@ -134,9 +141,9 @@ LR0.highestId = 0
 
 /*
  * A node in the LR0 graph. It has one or more LR0 items.
- 
+
  * States are indexed in the final pass so that we can refer to them using an
- * integer. 
+ * integer.
  */
 class State {
   constructor(index, items) {
@@ -334,6 +341,32 @@ function generateStates(grammar) {
   return states
 }
 
+function compileTokenSwitch(transitions) {
+  let source = ""
+  source += "switch (type) {\n"
+  for (let [name, t] of transitions) {
+    if (name[0] !== "%") continue
+    source += "case " + JSON.stringify(name.slice(1)) + ": "
+    source += "return " + t.index + "\n"
+  }
+  source += "default: return -1\n"
+  source += "}\n"
+  return Function("type", source)
+}
+
+function compileNameSwitch(transitions) {
+  let source = ""
+  source += "switch (name) {\n"
+  for (let [name, t] of transitions) {
+    if (name[0] === "%") continue
+    source += "case " + JSON.stringify(name) + ": "
+    source += "return " + t.index + "\n"
+  }
+  source += "default: return -1\n"
+  source += "}\n"
+  return Function("name", source)
+}
+
 function compileState(state) {
   if (state.reduction) {
     const rule = state.reduction
@@ -341,7 +374,15 @@ function compileState(state) {
       eat: null,
       reduce: function() {
         const value = this._reduce(rule)
-        this.state.eatName.call(this, rule.name, value)
+
+        const index = this.state.eatName.call(this, rule.name)
+        if (index === -1) {
+          throw new Error("Internal error")
+        }
+
+        this.pastStates.push(this.state)
+        this.stack.push(value)
+        this.state = this.states[index]
       },
       items: state.items.slice(),
       index: state.index,
@@ -349,25 +390,8 @@ function compileState(state) {
   }
 
   return {
-    eatToken: function(tok) {
-      const name = "%" + tok.type
-      const t = state.transitions.get(name)
-      if (t == null) {
-        throw new Error("Unexpected token '" + tok.type + "'")
-      }
-      this.pastStates.push(this.state)
-      this.stack.push(tok.value)
-      this.state = this.states[t.index]
-    },
-    eatName: function(name, value) {
-      const t = state.transitions.get(name)
-      if (!t) {
-        throw new Error("Internal error")
-      }
-      this.pastStates.push(this.state)
-      this.stack.push(value)
-      this.state = this.states[t.index]
-    },
+    eatToken: compileTokenSwitch(state.transitions),
+    eatName: compileNameSwitch(state.transitions),
     reduce: null,
     items: state.items.slice(),
     index: state.index,
