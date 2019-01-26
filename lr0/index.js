@@ -34,21 +34,21 @@ class LR0Parser {
         const keys = {}
         for (const key of Object.getOwnPropertyNames(keyIndexes)) {
           const index = keyIndexes[key]
-          keys[key] = children[index]
+          keys[key] = childAt(rule, children, index)
         }
         const region = null // TODO
         return new Node(rule.object, region, keys)
       case "root":
-        return children[rule.rootIndex]
+        return childAt(rule, children, rule.rootIndex)
       case "list":
         if (rule.rootIndex !== undefined && rule.listIndex !== undefined) {
-          const list = children[rule.listIndex]
-          list.push(children[rule.rootIndex])
+          const list = childAt(rule, children, rule.listIndex)
+          list.push(childAt(rule, children, rule.rootIndex))
           return list
         } else if (rule.rootIndex !== undefined) {
-          return [children[rule.rootIndex]]
+          return [childAt(rule, children, rule.rootIndex)]
         } else if (rule.listIndex !== undefined) {
-          return children[rule.listIndex]
+          return childAt(rule, children, rule.listIndex)
         } else {
           return []
         }
@@ -217,6 +217,13 @@ function transitions(items) {
     wants.get(key).push(item.advance)
   }
   return wants
+}
+
+function childAt(rule, children, index) {
+  if (rule.children[index].type === "token") {
+    return children[index].value
+  }
+  return children[index]
 }
 
 function childKey(child) {
