@@ -173,13 +173,6 @@ function transitions(items) {
   return wants
 }
 
-function childAt(rule, children, index) {
-  if (rule.children[index].type === "token") {
-    return children[index].value
-  }
-  return children[index]
-}
-
 function childKey(child) {
   switch (child.type) {
     case "name":
@@ -337,46 +330,57 @@ function compileNameSwitch(transitions) {
 }
 
 function compileReducer(rule) {
-  return function() {
-    if (this.stack.length < rule.children.length) {
-      assert.fail("Stack not big enough")
-    }
+  const children = rule.children
+  let source = ""
 
-    const pastStates = this.pastStates.splice(this.pastStates.length - rule.children.length)
-    this.state = pastStates[0]
-    //console.log(`reduce ${rule.name} (${rule.children.length}) -> ${this.stateIndex}`)
+  source += "if (this.stack.length < " + children.length + ") { "
+  source += "throw new Error('Internal error') "
+  source += "}\n"
 
-    const children = this.stack.splice(this.stack.length - rule.children.length)
-    switch (rule.type) {
-      case "null":
-        return null
-      case "object":
-        const keyIndexes = rule.keys
-        const keys = {}
-        for (const key of Object.getOwnPropertyNames(keyIndexes)) {
-          const index = keyIndexes[key]
-          keys[key] = children[index]
-        }
-        const region = null // TODO
-        return new Node(rule.object, region, keys)
-      case "root":
-        return children[rule.rootIndex]
-      case "list":
-        if (rule.rootIndex !== undefined && rule.listIndex !== undefined) {
-          const list = children[rule.listIndex]
-          list.push(children[rule.rootIndex])
-          return list
-        } else if (rule.rootIndex !== undefined) {
-          return [children[rule.rootIndex]]
-        } else if (rule.listIndex !== undefined) {
-          return children[rule.listIndex]
-        } else {
-          return []
-        }
-      default:
-        assert.fail("Unknown rule type " + rule.type)
-    }
+  if (children.length === 1) {
+    source += "this.state = this.pastStates.pop()\n"
+  } else {
+    source +=
+      "this.state = this.pastStates.splice(this.pastStates.length - " + children.length + ")[0]\n"
   }
+  source += "var children = this.stack.splice(this.stack.length - " + children.length + ")\n"
+  source += "\n"
+
+  switch (rule.type) {
+    case "null":
+      source += "return null\n"
+      break
+    case "root":
+      source += "return children[" + rule.rootIndex + "]\n"
+      break
+    case "object":
+      const keyIndexes = rule.keys
+      source += "return new Node(" + JSON.stringify(rule.object) + ", null, {\n"
+      const keyNames = Object.getOwnPropertyNames(keyIndexes)
+      for (const key of keyNames) {
+        const index = keyIndexes[key]
+        source += JSON.stringify(key) + ": children[" + index + "],\n"
+      }
+      source += "})\n"
+      break
+    case "list":
+      if (rule.rootIndex !== undefined && rule.listIndex !== undefined) {
+        source += "var list = children[" + rule.listIndex + "]\n"
+        source += "list.push(children[" + rule.rootIndex + "])\n"
+        source += "return list"
+      } else if (rule.rootIndex !== undefined) {
+        // Wrap the item in a list
+        source += "return [children[" + rule.rootIndex + "]]\n"
+      } else if (rule.listIndex !== undefined) {
+        source += "return children[" + rule.listIndex + "]\n"
+      } else {
+        source += "return []\n"
+      }
+      break
+    default:
+      throw new Error("Unknown rule type " + rule.type)
+  }
+  return evalProcessor(source)
 }
 
 function compileState(state) {
@@ -398,6 +402,16 @@ function compileState(state) {
     items: state.items.slice(),
     index: state.index,
   }
+}
+
+function evalProcessor(source) {
+  // import the Node class into the scope of eval()
+  const { Node } = require("../grammar")
+
+  // NB we could cache these functions, to reduce the amount of work that
+  // the JIT has to do. Some processors (e.g. the root processor) may
+  // occur multiple times
+  return eval("(function () {\n" + source + "\n})")
 }
 
 function compileStates(states) {
