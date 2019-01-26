@@ -6,14 +6,15 @@ const { Node } = require("../grammar")
 class LR0Parser {
   constructor(grammar) {
     this.grammar = grammar
-    this.states = generateStates(grammar)
+    const rawStates = generateStates(grammar)
+    this.states = compileStates(rawStates)
     this.reset()
   }
 
   reset() {
-    this.stateIndex = 0
+    this.state = this.states[0]
+    this.pastStates = []
     this.stack = []
-    this.stateStack = []
   }
 
   _reduce(rule) {
@@ -21,8 +22,8 @@ class LR0Parser {
       assert.fail("Stack not big enough")
     }
 
-    const pastStates = this.stateStack.splice(this.stateStack.length - rule.children.length)
-    this.stateIndex = pastStates[0]
+    const pastStates = this.pastStates.splice(this.pastStates.length - rule.children.length)
+    this.state = pastStates[0]
     //console.log(`reduce ${rule.name} (${rule.children.length}) -> ${this.stateIndex}`)
 
     const children = this.stack.splice(this.stack.length - rule.children.length)
@@ -57,38 +58,15 @@ class LR0Parser {
     }
   }
 
-  get state() {
-    return this.states[this.stateIndex]
-  }
-
-  _shift(name, value) {
-    const t = this.state.transitions.get(name)
-    if (t == null) {
-      return false
-    }
-    this.stateStack.push(this.stateIndex)
-    this.stack.push(value)
-    this.stateIndex = t.index
-    //console.log(`shift ${name} -> ${t.index}`)
-    return true
-  }
-
   eat(tok) {
-    if (!this._shift("%" + tok.type, tok.value)) {
-      throw new Error('Unexpected "' + tok.type + '"')
-    }
-
-    while (this.state.reduction) {
-      const rule = this.state.reduction
-      const value = this._reduce(rule)
-      if (!this._shift(rule.name, value)) {
-        assert.fail("This should never happen")
-      }
+    this.state.eatToken.call(this, tok)
+    while (this.state.reduce) {
+      this.state.reduce.call(this)
     }
   }
 
   result() {
-    if (this.stateIndex !== 1) {
+    if (this.state.index !== 1) {
       throw new Error("Unexpected EOF")
     }
     return this.stack[0]
@@ -354,6 +332,50 @@ function generateStates(grammar) {
   // fs.writeFileSync(grammar.start + ".dot", graphviz(states))
 
   return states
+}
+
+function compileState(state) {
+  if (state.reduction) {
+    const rule = state.reduction
+    return {
+      eat: null,
+      reduce: function() {
+        const value = this._reduce(rule)
+        this.state.eatName.call(this, rule.name, value)
+      },
+      items: state.items.slice(),
+      index: state.index,
+    }
+  }
+
+  return {
+    eatToken: function(tok) {
+      const name = "%" + tok.type
+      const t = state.transitions.get(name)
+      if (t == null) {
+        throw new Error("Unexpected token '" + tok.type + "'")
+      }
+      this.pastStates.push(this.state)
+      this.stack.push(tok.value)
+      this.state = this.states[t.index]
+    },
+    eatName: function(name, value) {
+      const t = state.transitions.get(name)
+      if (!t) {
+        throw new Error("Internal error")
+      }
+      this.pastStates.push(this.state)
+      this.stack.push(value)
+      this.state = this.states[t.index]
+    },
+    reduce: null,
+    items: state.items.slice(),
+    index: state.index,
+  }
+}
+
+function compileStates(states) {
+  return states.map(s => compileState(s))
 }
 
 function compile(grammar) {
