@@ -46,6 +46,30 @@ item Item -> key:"STRING" ":" value:json
 
 `)
 
+// This grammar is right-recursive, to suit a naive LL1 parser. It embraces
+// nullable rules.
+const rightRecursiveGrammar = newGrammar(`
+
+json Object -> "{" items:items "}"
+json Array -> "[" items:array "]"
+json String -> value:"STRING"
+json Number -> value:"NUMBER"
+json Bool   -> value:"TRUE"
+json Bool   -> value:"FALSE"
+json Null   -> "NULL"
+
+items [] -> :item "," []:items
+items [] -> :item
+items [] ->
+
+array [] -> :json "," []:array
+array [] -> :json
+array [] ->
+
+item Item -> key:"STRING" ":" value:json
+
+`)
+
 function process(node) {
   switch (node.type) {
     case "Object":
@@ -74,5 +98,6 @@ function process(node) {
 module.exports = {
   lexer,
   grammar,
+  rightRecursiveGrammar,
   process,
 }
