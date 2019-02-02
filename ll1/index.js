@@ -81,16 +81,20 @@ function compileRule(name, rules) {
   let source = ""
 
   function alt(rules) {
+    let nullable = false
     source += "switch (tok.type) {\n"
     for (let rule of rules) {
       const first = rule.children[0]
-      source += "case " + JSON.stringify(first.name) + ": // " + formatRule(rule) + "\n"
+      if (!first) {
+        source += "default:\n"
+      } else {
+        source += "case " + JSON.stringify(first.name) + ": // " + formatRule(rule) + "\n"
+      }
       seq(rule)
       source += "\n"
     }
-    source += "default:\n"
-    source += 'syntaxError("Unexpected \'" + tok.type + "\'")\n'
     source += "}\n"
+    source += 'syntaxError("Unexpected \'" + tok.type + "\'")\n'
   }
 
   function seq(rule) {
