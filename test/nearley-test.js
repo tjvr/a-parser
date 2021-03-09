@@ -208,3 +208,17 @@ test("parse JSON", t => {
   }
   t.deepEqual(process(tree), JSON.parse(source))
 })
+
+test("parse tribble", t => {
+  const { lexer, grammar, process } = require("../examples/tribble")
+  const parser = nearleyParser(grammar)
+
+  lexer.reset(`( + 12 + 34)`)
+  let tok
+  while ((tok = lexer.next())) {
+    if (tok.type === "space") continue
+    parser.eat(tok)
+  }
+  console.log(parser.allResults() + "\n")
+  t.deepEqual(parser.result(), [])
+})
