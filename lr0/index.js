@@ -19,7 +19,7 @@ class LR0Parser {
   eat(tok) {
     // Shift the token.
     let state = this.state
-    const nextState = state.eatToken(tok.type)
+    const nextState = state.shift(tok.type)
     if (nextState === null) {
       throw new Error("Unexpected token '" + tok.type + "'")
     }
@@ -395,7 +395,7 @@ function compileState(state) {
   }
 
   return {
-    eatToken: compileTokenSwitch(state.transitions),
+    shift: compileTokenSwitch(state.transitions),
     eatName: compileNameSwitch(state.transitions),
     reduce: null,
     items: state.items.slice(),
@@ -414,7 +414,7 @@ function compileStates(states) {
       source += "name: " + JSON.stringify(rule.name) + ",\n"
       source += "reduce: function(stack) {\n" + compileReducer(rule) + "},\n"
     } else {
-      source += "eatToken: function(type) {\n" + compileTokenSwitch(state.transitions) + "},\n"
+      source += "shift: function(type) {\n" + compileTokenSwitch(state.transitions) + "},\n"
       source += "eatName: function(name) {\n" + compileNameSwitch(state.transitions) + "},\n"
     }
     source += "}\n"
