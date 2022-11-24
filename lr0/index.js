@@ -19,7 +19,7 @@ class LR0Parser {
   eat(tok) {
     // Shift the token.
     let state = this.state
-    const nextState = state.eatToken.call(null, tok.type)
+    const nextState = state.eatToken(tok.type)
     if (nextState === null) {
       throw new Error("Unexpected token '" + tok.type + "'")
     }
@@ -337,7 +337,6 @@ function compileReducer(rule) {
   for (let index = children.length - 1; index >= 0; index--) {
     source += "var c" + index + " = stack.pop()\n"
   }
-  source += `var previousState = c0.state\n`
   const childAt = index => `c${index}.value`
 
   switch (rule.type) {
@@ -377,8 +376,9 @@ function compileReducer(rule) {
   // We've popped N items off the stack, to arrive at `previousState`.
   // We've reduced `rule`.
   // We now push that non-terminal onto `previousState`.
+  source += `var previousState = c0.state\n`
   source += `stack.push({ value: result, state: previousState })\n`
-  source += `return previousState.eatName.call(null, ${JSON.stringify(rule.name)})\n`
+  source += `return previousState.eatName(${JSON.stringify(rule.name)})\n`
   return source
 }
 
