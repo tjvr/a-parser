@@ -17,24 +17,17 @@ class LR0Parser {
   }
 
   eat(tok) {
-    const nextState = this.state.eatToken.call(this, tok.type)
+    let state = this.state
+    const nextState = state.eatToken.call(null, tok.type)
     if (nextState === null) {
       throw new Error("Unexpected token '" + tok.type + "'")
     }
-    this.stack.push({ value: tok.value, state: this.state })
-    this.state = nextState
-
-    while (this.state.reduce) {
-      const name = this.state.name
-      const value = this.state.reduce.call(this)
-
-      const nextState = this.state.eatName.call(this, name)
-      if (nextState === null) {
-        throw new Error("Internal error: no state")
-      }
-      this.stack.push({ value: value, state: this.state })
-      this.state = nextState
+    this.stack.push({ value: tok.value, state: state })
+    state = nextState
+    while (state.reduce != null) {
+      state = state.reduce(this.stack)
     }
+    this.state = state
   }
 
   result() {
@@ -332,26 +325,26 @@ function compileReducer(rule) {
   const children = rule.children
   let source = ""
 
-  source += "if (this.stack.length < " + children.length + ") { "
+  source += "if (stack.length < " + children.length + ") { "
   source += "throw new Error('Internal error') "
   source += "}\n"
 
   for (let index = children.length - 1; index >= 0; index--) {
-    source += "var c" + index + " = this.stack.pop()\n"
+    source += "var c" + index + " = stack.pop()\n"
   }
-  source += `this.state = c0.state\n`
+  source += `var previousState = c0.state\n`
   const childAt = index => `c${index}.value`
 
   switch (rule.type) {
     case "null":
-      source += "return null\n"
+      source += "var result = null\n"
       break
     case "root":
-      source += "return " + childAt(rule.rootIndex) + "\n"
+      source += "var result = " + childAt(rule.rootIndex) + "\n"
       break
     case "object":
       const keyIndexes = rule.keys
-      source += "return new Node(" + JSON.stringify(rule.object) + ", null, {\n"
+      source += "var result = new Node(" + JSON.stringify(rule.object) + ", null, {\n"
       const keyNames = Object.getOwnPropertyNames(keyIndexes)
       for (const key of keyNames) {
         const index = keyIndexes[key]
@@ -363,19 +356,29 @@ function compileReducer(rule) {
       if (rule.rootIndex !== undefined && rule.listIndex !== undefined) {
         source += "var list = " + childAt(rule.listIndex) + "\n"
         source += "list.push(" + childAt(rule.rootIndex) + ")\n"
-        source += "return list\n"
+        source += "var result = list\n"
       } else if (rule.rootIndex !== undefined) {
         // Wrap the item in a list
-        source += "return [" + childAt(rule.rootIndex) + "]\n"
+        source += "var result = [" + childAt(rule.rootIndex) + "]\n"
       } else if (rule.listIndex !== undefined) {
-        source += "return " + childAt(rule.listIndex) + "\n"
+        source += "var result = " + childAt(rule.listIndex) + "\n"
       } else {
-        source += "return []\n"
+        source += "var result = []\n"
       }
       break
     default:
       throw new Error("Unknown rule type " + rule.type)
   }
+  // We've popped N items off the stack, to arrive at `previousState`.
+  // We've reduced `rule`.
+  // We now push that non-terminal onto `previousState`.
+  source += `var nextState = previousState.eatName.call(null, ${JSON.stringify(rule.name)})\n`
+  source += "if (nextState == null) { "
+  source += "throw new Error('Internal error') "
+  source += "}\n"
+  // TODO error handling: what if nextState is null?
+  source += `stack.push({ value: result, state: previousState })\n`
+  source += `return nextState\n`
   return source
 }
 
@@ -409,7 +412,7 @@ function compileStates(states) {
     if (state.reduction) {
       const rule = state.reduction
       source += "name: " + JSON.stringify(rule.name) + ",\n"
-      source += "reduce: function() {\n" + compileReducer(rule) + "},\n"
+      source += "reduce: function(stack) {\n" + compileReducer(rule) + "},\n"
     } else {
       source += "eatToken: function(type) {\n" + compileTokenSwitch(state.transitions) + "},\n"
       source += "eatName: function(name) {\n" + compileNameSwitch(state.transitions) + "},\n"
@@ -425,7 +428,7 @@ function compileStates(states) {
   source += "]\n"
 
   // const fs = require("fs")
-  // fs.writeFileSync("_compiled.js", source)
+  // fs.writeFileSync("/tmp/_compiled.js", source)
 
   return evalWithNode(source)
 }
