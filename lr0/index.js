@@ -13,7 +13,6 @@ class LR0Parser {
 
   reset() {
     this.state = this.states[0]
-    this.pastStates = []
     this.stack = []
   }
 
@@ -22,8 +21,7 @@ class LR0Parser {
     if (nextState === null) {
       throw new Error("Unexpected token '" + tok.type + "'")
     }
-    this.pastStates.push(this.state)
-    this.stack.push(tok.value)
+    this.stack.push({ value: tok.value, state: this.state })
     this.state = nextState
 
     while (this.state.reduce) {
@@ -34,8 +32,7 @@ class LR0Parser {
       if (nextState === null) {
         throw new Error("Internal error: no state")
       }
-      this.pastStates.push(this.state)
-      this.stack.push(value)
+      this.stack.push({ value: value, state: this.state })
       this.state = nextState
     }
   }
@@ -44,7 +41,7 @@ class LR0Parser {
     if (this.state.index !== 1) {
       throw new Error("Unexpected EOF")
     }
-    return this.stack[0]
+    return this.stack[0].value
   }
 
   expectedTypes() {
@@ -339,15 +336,11 @@ function compileReducer(rule) {
   source += "throw new Error('Internal error') "
   source += "}\n"
 
-  for (let index = children.length; index > 1; index--) {
-    source += "this.pastStates.pop()\n"
-  }
-  source += "this.state = this.pastStates.pop()\n"
-
   for (let index = children.length - 1; index >= 0; index--) {
     source += "var c" + index + " = this.stack.pop()\n"
   }
-  const childAt = index => "c" + index
+  source += `this.state = c0.state\n`
+  const childAt = index => `c${index}.value`
 
   switch (rule.type) {
     case "null":
@@ -432,7 +425,7 @@ function compileStates(states) {
   source += "]\n"
 
   // const fs = require("fs")
-  // fs.writeFileSync(grammar.start + ".js", source)
+  // fs.writeFileSync("_compiled.js", source)
 
   return evalWithNode(source)
 }
