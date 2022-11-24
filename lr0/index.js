@@ -17,6 +17,7 @@ class LR0Parser {
   }
 
   eat(tok) {
+    // Shift the token.
     let state = this.state
     const nextState = state.eatToken.call(null, tok.type)
     if (nextState === null) {
@@ -24,8 +25,14 @@ class LR0Parser {
     }
     this.stack.push({ value: tok.value, state: state })
     state = nextState
+
+    // Apply any reductions.
     while (state.reduce != null) {
       state = state.reduce(this.stack)
+      if (nextState === null) {
+        // This should be impossible given a well-formed LR0 automaton.
+        throw new Error("Internal error: failed to reduce")
+      }
     }
     this.state = state
   }
@@ -325,10 +332,8 @@ function compileReducer(rule) {
   const children = rule.children
   let source = ""
 
-  source += "if (stack.length < " + children.length + ") { "
-  source += "throw new Error('Internal error') "
-  source += "}\n"
-
+  // We deliberately skip bounds checks here. The `pop()` will fail if there
+  // are less than `children.length` items on the stack.
   for (let index = children.length - 1; index >= 0; index--) {
     source += "var c" + index + " = stack.pop()\n"
   }
@@ -372,13 +377,8 @@ function compileReducer(rule) {
   // We've popped N items off the stack, to arrive at `previousState`.
   // We've reduced `rule`.
   // We now push that non-terminal onto `previousState`.
-  source += `var nextState = previousState.eatName.call(null, ${JSON.stringify(rule.name)})\n`
-  source += "if (nextState == null) { "
-  source += "throw new Error('Internal error') "
-  source += "}\n"
-  // TODO error handling: what if nextState is null?
   source += `stack.push({ value: result, state: previousState })\n`
-  source += `return nextState\n`
+  source += `return previousState.eatName.call(null, ${JSON.stringify(rule.name)})\n`
   return source
 }
 
