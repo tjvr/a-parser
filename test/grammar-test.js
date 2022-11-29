@@ -33,17 +33,17 @@ test("root type", t => {
 
 test("warns for multiple root children", t => {
   const rule = parseRule(t, `foo -> :bar "-" :quxx`)
-  t.throws(t => buildType(rule), /^More than one root child/)
+  t.throws(t => buildType(rule), { message: /^More than one root child/ })
 })
 
 test("warns for named children in root rule", t => {
   const rule = parseRule(t, `foo -> "(" item:bar ")"`)
-  t.throws(t => buildType(rule), /^Named child in rule without node type/)
+  t.throws(t => buildType(rule), { message: /^Named child in rule without node type/ })
 })
 
 test("warns for list children in root rule", t => {
   const rule = parseRule(t, `foo -> []:bar`)
-  t.throws(t => buildType(rule), /^List child in non-list rule/)
+  t.throws(t => buildType(rule), { message: /^List child in non-list rule/ })
 })
 
 test("empty list type", t => {
@@ -63,17 +63,17 @@ test("list type", t => {
 
 test("warns for named children in list rule", t => {
   const rule = parseRule(t, `xl [] -> item:x`)
-  t.throws(t => buildType(rule), /^Named child in list rule/)
+  t.throws(t => buildType(rule), { message: /^Named child in list rule/ })
 })
 
 test("warns for multiple list children", t => {
   const rule = parseRule(t, `xl [] -> []:xl []:xl`)
-  t.throws(t => buildType(rule), /^More than one list child/)
+  t.throws(t => buildType(rule), { message: /^More than one list child/ })
 })
 
 test("warns for multiple root children in list rule", t => {
   const rule = parseRule(t, `xl [] -> :x :x`)
-  t.throws(t => buildType(rule), /^More than one root child/)
+  t.throws(t => buildType(rule), { message: /^More than one root child/ })
 })
 
 test("object type", t => {
@@ -90,17 +90,17 @@ test("object type", t => {
 
 test("warns for duplicate keys", t => {
   const rule = parseRule(t, `foo Obj -> bar:x bar:x`)
-  t.throws(t => buildType(rule), /^Duplicate name 'bar'/)
+  t.throws(t => buildType(rule), { message: /^Duplicate name 'bar'/ })
 })
 
 test("warns for root children in object rule", t => {
   const rule = parseRule(t, `foo Obj -> :x`)
-  t.throws(t => buildType(rule), /^Root child in object rule/)
+  t.throws(t => buildType(rule), { message: /^Root child in object rule/ })
 })
 
 test("warns for list children in object rule", t => {
   const rule = parseRule(t, `foo Obj -> []:x`)
-  t.throws(t => buildType(rule), /^List child in object rule/)
+  t.throws(t => buildType(rule), { message: /^List child in object rule/ })
 })
 
 test("builds null rule", t => {
@@ -269,7 +269,7 @@ test("multiple modifiers", t => {
 })
 
 test("detects direct recursion", t => {
-  const expectedError = /^Cycle detected/
+  const expectedError = { message: /^Cycle detected/ }
   t.throws(t => grammar.newGrammar(`foo -> foo`), expectedError)
   t.throws(t => grammar.newGrammar(`foo -> :foo`), expectedError)
   t.throws(t => grammar.newGrammar(`foo Thing -> bar:foo`), expectedError)
@@ -280,32 +280,29 @@ test("detects direct recursion", t => {
 })
 
 test("detects indirect recursion", t => {
-  t.throws(t => grammar.newGrammar(`A -> B\nB -> A`), /^Cycle detected[^]*B -> A/)
-  t.throws(t => grammar.newGrammar(`A -> B\nB -> C\nC -> A`), /^Cycle detected[^]*C -> A/)
+  t.throws(t => grammar.newGrammar(`A -> B\nB -> A`), { message: /^Cycle detected[^]*B -> A/ })
+  t.throws(t => grammar.newGrammar(`A -> B\nB -> C\nC -> A`), {
+    message: /^Cycle detected[^]*C -> A/,
+  })
   t.notThrows(t => grammar.newGrammar(`A -> B\nB -> "(" A ")"`))
 })
 
 test("detects conflicting types", t => {
-  t.throws(
-    t => grammar.newGrammar(`a Thing ->\na [] ->`),
-    /^Rule has type list but another rule has type object/
-  )
-  t.throws(
-    t => grammar.newGrammar(`a [] ->\na Thing ->`),
-    /^Rule has type object but another rule has type list/
-  )
-  t.throws(
-    t => grammar.newGrammar(`a [] ->\na -> :b\nb Thing ->`),
-    /^Rule has type object but another rule has type list/
-  )
-  t.throws(
-    t => grammar.newGrammar(`a Thing ->\na -> :"foo"`),
-    /^Rule has type string but another rule has type object/
-  )
-  t.throws(
-    t => grammar.newGrammar(`a -> :b\na -> :"foo"\nb [] ->`),
-    /^Rule has type string but another rule has type list/
-  )
+  t.throws(t => grammar.newGrammar(`a Thing ->\na [] ->`), {
+    message: /^Rule has type list but another rule has type object/,
+  })
+  t.throws(t => grammar.newGrammar(`a [] ->\na Thing ->`), {
+    message: /^Rule has type object but another rule has type list/,
+  })
+  t.throws(t => grammar.newGrammar(`a [] ->\na -> :b\nb Thing ->`), {
+    message: /^Rule has type object but another rule has type list/,
+  })
+  t.throws(t => grammar.newGrammar(`a Thing ->\na -> :"foo"`), {
+    message: /^Rule has type string but another rule has type object/,
+  })
+  t.throws(t => grammar.newGrammar(`a -> :b\na -> :"foo"\nb [] ->`), {
+    message: /^Rule has type string but another rule has type list/,
+  })
 })
 
 test("allows EBNF in the first rule", t => {

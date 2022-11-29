@@ -3,7 +3,9 @@ const test = require("ava")
 const { Node, Pos, Region } = require("../grammar")
 
 test("warns if type is in attrs", t => {
-  t.throws(() => new Node("foo", null, { type: "bar" }), /^Cannot set 'type' property on a Node/)
+  t.throws(() => new Node("foo", null, { type: "bar" }), {
+    message: /^Cannot set 'type' property on a Node/,
+  })
 })
 
 test("formats region", t => {
