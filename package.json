@@ -14,7 +14,7 @@
     "prettier": "^2.8.0"
   },
   "dependencies": {
-    "moo": "git+https://git@github.com/no-context/moo.git#format-error-eof"
+    "moo": "^0.5.2"
   },
   "pre-commit": "fmt-staged",
   "lint-staged": {
