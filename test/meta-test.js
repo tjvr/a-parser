@@ -117,7 +117,7 @@ test("disallows multiple modifiers", t => {
   t.throws(t => parseRule(t, `foo -> bar*?`), /^Expected space \(found \?\)/)
 })
 
-test.failing("handles EOF", t => {
+test("handles EOF", t => {
   parseGrammar(`foo -> bar`)
   parseGrammar(`foo -> "quxx"`)
   parseGrammar(`foo ->`)

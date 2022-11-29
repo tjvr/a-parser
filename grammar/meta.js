@@ -89,7 +89,7 @@ function parse(buffer) {
   }
 
   function node(type, start, attrs) {
-    const end = tok ? Pos.before(tok) : new Pos(lexer.line, lexer.col, lexer.index)
+    const end = tok != null ? Pos.before(tok) : new Pos(lexer.line, lexer.col, lexer.index)
     const region = new Region(start, end, buffer)
     return new Node(type, region, attrs)
   }
@@ -101,6 +101,9 @@ function parse(buffer) {
   }
 
   function parseValue() {
+    if (tok == null) {
+      expectError("value")
+    }
     const start = Pos.before(tok)
     const name = tok.value
 
@@ -125,6 +128,9 @@ function parse(buffer) {
 
   function parseKey(start, key) {
     expect(":")
+    if (tok == null) {
+      expect("value")
+    }
     const atomStart = Pos.before(tok)
     const value = parseValue()
     const match = parseModifier(value, atomStart)
@@ -144,6 +150,9 @@ function parse(buffer) {
   }
 
   function parseAtom() {
+    if (tok == null) {
+      expectError("value")
+    }
     const start = Pos.before(tok)
     switch (tok.type) {
       case "string":
@@ -180,6 +189,9 @@ function parse(buffer) {
   }
 
   function parseNodeType() {
+    if (tok == null) {
+      expectError("node type")
+    }
     const start = Pos.before(tok)
     const value = tok.value
     switch (tok && tok.type) {
