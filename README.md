@@ -63,6 +63,7 @@ Grammars are defined using a custom syntax, from which a parser can be generated
 
 The `grammar` module contains code to interpret this syntax.
 
+TODO explain atoms: what does `"if"` match?
 
 ## Post-processing
 
