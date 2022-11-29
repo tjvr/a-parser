@@ -37,3 +37,16 @@ test("parse JSON", t => {
   }
   t.deepEqual(process(tree), JSON.parse(source))
 })
+
+test("brackets", t => {
+  const { lexer, grammar, process } = require("../examples/brackets")
+  const parser = compile(grammar)
+
+  lexer.reset(`( a ; b ; c )`)
+  let tok
+  while ((tok = lexer.next())) {
+    if (tok.type === "space") continue
+    parser.eat(tok)
+  }
+  t.deepEqual(process(parser.result()), [["a", "b"], "c"])
+})
