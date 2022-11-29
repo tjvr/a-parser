@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "ava": "^5.1.0",
-    "benchr": "^3.4.0",
+    "benchr": "^4.3.0",
     "lint-staged": "^7.3.0",
     "nearley": "^2.15.1",
     "pre-commit": "^1.2.2",
