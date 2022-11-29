@@ -1,9 +1,11 @@
+const fs = require("fs")
+
 const test = require("ava")
 
 const grammar = require("../grammar")
 const compile = require("../lr0")
 
-test("parse JSON", t => {
+test("json", (t) => {
   const { lexer, grammar, process } = require("../examples/json")
 
   const parser = compile(grammar)
@@ -38,7 +40,24 @@ test("parse JSON", t => {
   t.deepEqual(process(tree), JSON.parse(source))
 })
 
-test("brackets", t => {
+test("json benchmark", (t) => {
+  const { lexer, grammar, process } = require("../examples/json")
+  const parser = compile(grammar)
+
+  let jsonFile = fs.readFileSync("benchmark/json/sample1k.json", "utf-8")
+
+  lexer.reset(jsonFile)
+  parser.reset()
+  while ((tok = lexer.next())) {
+    if (tok.type === "space") continue
+    parser.eat(tok)
+  }
+  const tree = parser.result()
+
+  t.deepEqual(process(tree), JSON.parse(jsonFile))
+})
+
+test("brackets", (t) => {
   const { lexer, grammar, process } = require("../examples/brackets")
   const parser = compile(grammar)
 
