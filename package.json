@@ -8,7 +8,7 @@
   "devDependencies": {
     "ava": "^5.1.0",
     "benchr": "^4.3.0",
-    "lint-staged": "^7.3.0",
+    "lint-staged": "^13.0.4",
     "nearley": "^2.20.1",
     "pre-commit": "^1.2.2",
     "prettier": "^2.8.0"
@@ -19,8 +19,7 @@
   "pre-commit": "fmt-staged",
   "lint-staged": {
     "*.js": [
-      "prettier --write",
-      "git add"
+      "prettier --write"
     ]
   },
   "prettier": {
