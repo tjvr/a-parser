@@ -215,6 +215,9 @@ function graphviz(states) {
     lines.push(`${s.index} [shape=box align=left label=${dotStr(label.join("\n"))}];`)
 
     for (let [token, t] of s.transitions) {
+      if (token[0] === "%") {
+        token = `\\"${token.slice(1)}\\"`
+      }
       lines.push(`${s.index} -> ${t.index} [label="${token}"];`)
     }
     lines.push("")
@@ -297,7 +300,7 @@ function generateStates(grammar) {
   }
 
   // const fs = require("fs")
-  // fs.writeFileSync(grammar.start + ".dot", graphviz(states))
+  // fs.writeFileSync("foo.dot", graphviz(states))
 
   return states
 }
@@ -427,6 +430,9 @@ function compileStates(states) {
     source += "s" + state.index + ",\n"
   }
   source += "]\n"
+
+  // const fs = require("fs")
+  // fs.writeFileSync(grammar.start + ".js", source)
 
   return evalWithNode(source)
 }
