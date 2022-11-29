@@ -9,9 +9,9 @@
     "ava": "^5.1.0",
     "benchr": "^4.3.0",
     "lint-staged": "^7.3.0",
-    "nearley": "^2.15.1",
+    "nearley": "^2.20.1",
     "pre-commit": "^1.2.2",
-    "prettier": "^1.14.3"
+    "prettier": "^2.8.0"
   },
   "dependencies": {
     "moo": "git+https://git@github.com/no-context/moo.git#format-error-eof"
