@@ -8,47 +8,36 @@ class LR0Parser {
     this.grammar = grammar
     const rawStates = generateStates(grammar)
     this.states = compileStates(rawStates)
-    this.reset()
-  }
-
-  reset() {
-    this.state = this.states[0]
-    this.stack = []
   }
 
   parse(next) {
-    this.reset()
+    let state = this.states[0]
+    let stack = []
 
     let tok
     while ((tok = next())) {
       // Shift the token.
-      let state = this.state
       const nextState = state.shift(tok.type)
       if (nextState === null) {
         throw new Error("Unexpected token '" + tok.type + "'")
       }
-      this.stack.push({ value: tok.value, state: state })
+      stack.push({ value: tok.value, state: state })
       state = nextState
 
       // Apply any reductions.
       while (state.reduce != null) {
-        state = state.reduce(this.stack)
+        state = state.reduce(stack)
         if (nextState === null) {
           // This should be impossible given a well-formed LR0 automaton.
           throw new Error("Internal error: failed to reduce")
         }
       }
-      this.state = state
     }
 
-    return this.result()
-  }
-
-  result() {
-    if (this.state.index !== 1) {
+    if (state.index !== 1) {
       throw new Error("Unexpected EOF")
     }
-    return this.stack[0].value
+    return stack[0].value
   }
 }
 

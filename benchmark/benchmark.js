@@ -50,7 +50,7 @@ suite("json", () => {
   })
 
   // to show the futility of it all
-  benchmark("JSON.parse", () => {
-    JSON.parse(jsonFile)
-  })
+  // benchmark("JSON.parse", () => {
+  //   JSON.parse(jsonFile)
+  // })
 })
