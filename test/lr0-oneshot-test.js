@@ -16,9 +16,10 @@ test("json", (t) => {
   "cows": true, "no": false, "cow": "cow\\n\\n"}`
 
   lexer.reset(source)
-  let tok
+
+  let tree, tok
   try {
-    const tree = parser.parse(() => {
+    tree = parser.parse(() => {
       while ((tok = lexer.next())) {
         if (tok.type === "space") {
           continue
@@ -40,12 +41,20 @@ test("json benchmark", (t) => {
   let jsonFile = fs.readFileSync("benchmark/json/sample1k.json", "utf-8")
 
   lexer.reset(jsonFile)
-  parser.reset()
-  while ((tok = lexer.next())) {
-    if (tok.type === "space") continue
-    parser.eat(tok)
+
+  let tree, tok
+  try {
+    tree = parser.parse(() => {
+      while ((tok = lexer.next())) {
+        if (tok.type === "space") {
+          continue
+        }
+        return tok
+      }
+    })
+  } catch (err) {
+    t.fail(lexer.formatError(tok, err.message))
   }
-  const tree = parser.result()
 
   t.deepEqual(process(tree), JSON.parse(jsonFile))
 })
@@ -55,10 +64,20 @@ test("brackets", (t) => {
   const parser = compile(grammar)
 
   lexer.reset(`( a ; b ; c )`)
-  let tok
-  while ((tok = lexer.next())) {
-    if (tok.type === "space") continue
-    parser.eat(tok)
+
+  let tree, tok
+  try {
+    tree = parser.parse(() => {
+      while ((tok = lexer.next())) {
+        if (tok.type === "space") {
+          continue
+        }
+        return tok
+      }
+    })
+  } catch (err) {
+    t.fail(lexer.formatError(tok, err.message))
   }
-  t.deepEqual(process(parser.result()), [["a", "b"], "c"])
+
+  t.deepEqual(process(tree), [["a", "b"], "c"])
 })

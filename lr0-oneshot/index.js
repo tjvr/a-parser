@@ -16,25 +16,32 @@ class LR0Parser {
     this.stack = []
   }
 
-  eat(tok) {
-    // Shift the token.
-    let state = this.state
-    const nextState = state.shift(tok.type)
-    if (nextState === null) {
-      throw new Error("Unexpected token '" + tok.type + "'")
-    }
-    this.stack.push({ value: tok.value, state: state })
-    state = nextState
+  parse(next) {
+    this.reset()
 
-    // Apply any reductions.
-    while (state.reduce != null) {
-      state = state.reduce(this.stack)
+    let tok
+    while ((tok = next())) {
+      // Shift the token.
+      let state = this.state
+      const nextState = state.shift(tok.type)
       if (nextState === null) {
-        // This should be impossible given a well-formed LR0 automaton.
-        throw new Error("Internal error: failed to reduce")
+        throw new Error("Unexpected token '" + tok.type + "'")
       }
+      this.stack.push({ value: tok.value, state: state })
+      state = nextState
+
+      // Apply any reductions.
+      while (state.reduce != null) {
+        state = state.reduce(this.stack)
+        if (nextState === null) {
+          // This should be impossible given a well-formed LR0 automaton.
+          throw new Error("Internal error: failed to reduce")
+        }
+      }
+      this.state = state
     }
-    this.state = state
+
+    return this.result()
   }
 
   result() {
@@ -42,14 +49,6 @@ class LR0Parser {
       throw new Error("Unexpected EOF")
     }
     return this.stack[0].value
-  }
-
-  expectedTypes() {
-    return [] // TODO
-  }
-
-  allResults() {
-    return [this.result()]
   }
 }
 
