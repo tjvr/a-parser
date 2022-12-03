@@ -15,7 +15,8 @@
       "./lr0",
       "./lr0-oneshot",
       "./nearley",
-      "./nearley-grammar"
+      "./nearley-grammar",
+      "./test"
   ]
 }
 

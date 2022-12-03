@@ -42,8 +42,8 @@ function nearleyRules(grammar) {
 test("null processor", t => {
   const grammar = compile(`foo -> bar "quxx"\nbar -> "b"`)
   t.deepEqual(nearleyRules(grammar), [
-    { name: "foo", symbols: ["bar", { type: "quxx" }], process: "return null" },
-    { name: "bar", symbols: [{ type: "b" }], process: "return null" },
+    { name: "foo", symbols: ["bar", { type: "quxx" }], process: "return null;" },
+    { name: "bar", symbols: [{ type: "b" }], process: "return null;" },
   ])
 })
 
@@ -55,7 +55,7 @@ test("root processor", t => {
       symbols: [{ type: "(" }, "bar", { type: ")" }],
       process: "return d[1]",
     },
-    { name: "bar", symbols: [{ type: "b" }], process: "return null" },
+    { name: "bar", symbols: [{ type: "b" }], process: "return null;" },
   ])
 })
 
@@ -78,7 +78,7 @@ test("object processor", t => {
       symbols: ["bar", { type: "quxx" }],
       process: `return new Node("Obj", null, {\n"one": d[0],\n"two": d[1].value,\n})`,
     },
-    { name: "bar", symbols: [{ type: "b" }], process: "return null" },
+    { name: "bar", symbols: [{ type: "b" }], process: "return null;" },
   ])
 })
 
@@ -90,7 +90,7 @@ test("object with no keys", t => {
       symbols: ["bar", { type: "quxx" }],
       process: `return new Node("Obj", null, {\n})`,
     },
-    { name: "bar", symbols: [{ type: "b" }], process: "return null" },
+    { name: "bar", symbols: [{ type: "b" }], process: "return null;" },
   ])
 })
 
@@ -102,7 +102,7 @@ test("list processor", t => {
       symbols: ["statements", { type: ";" }, "stmt"],
       process: `var list = d[0].slice()\nlist.push(d[2])\nreturn list`,
     },
-    { name: "stmt", symbols: [{ type: "x" }], process: "return null" },
+    { name: "stmt", symbols: [{ type: "x" }], process: "return null;" },
   ])
 })
 
@@ -125,7 +125,7 @@ test("one-item list", t => {
       symbols: [{ type: "~" }, "stmt"],
       process: `return [d[1]]`,
     },
-    { name: "stmt", symbols: [{ type: "x" }], process: "return null" },
+    { name: "stmt", symbols: [{ type: "x" }], process: "return null;" },
   ])
 })
 

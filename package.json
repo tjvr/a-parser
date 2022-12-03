@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "ava test/",
+    "test": "tsc && ava built/test/",
     "fmt": "prettier --write *.js */*.js",
     "fmt-staged": "lint-staged",
     "benchmark": "tsc && benchr built/benchmark/benchmark.js"
