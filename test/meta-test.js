@@ -14,7 +14,7 @@ function metaLex(source) {
   return tokens
 }
 
-test("lexes rule", (t) => {
+test("lexes rule", t => {
   t.deepEqual(metaLex(`foo [] -> bar:"quxx"\n// hello\nquxx`), [
     "identifier foo",
     "list []",
@@ -38,7 +38,7 @@ function parseRule(t, source) {
   return rule
 }
 
-test("allow empty grammar", (t) => {
+test("allow empty grammar", t => {
   let tree = parseGrammar("\n \n")
   t.is(tree.type, "Grammar")
   t.deepEqual(tree.rules, [])
@@ -48,7 +48,7 @@ test("allow empty grammar", (t) => {
   t.deepEqual(tree.rules, [])
 })
 
-test("parses rule", (t) => {
+test("parses rule", t => {
   const tree = parseGrammar(`foo [] -> bar:"quxx"`)
   t.snapshot(tree)
   t.is(tree.type, "Grammar")
@@ -66,19 +66,19 @@ test("parses rule", (t) => {
   t.is(child.match.name, "quxx")
 })
 
-test("parses plain name", (t) => {
+test("parses plain name", t => {
   const rule = parseRule(t, `foo -> bar`)
   t.is(rule.children[0].type, "Name")
   t.is(rule.children[0].name, "bar")
 })
 
-test("parses plain token", (t) => {
+test("parses plain token", t => {
   const rule = parseRule(t, `foo -> "quxx"`)
   t.is(rule.children[0].type, "Token")
   t.is(rule.children[0].name, "quxx")
 })
 
-test("parses key", (t) => {
+test("parses key", t => {
   const rule = parseRule(t, `foo -> bar:"quxx"`)
   t.is(rule.children[0].type, "Key")
   t.is(rule.children[0].key.type, "Name")
@@ -87,21 +87,21 @@ test("parses key", (t) => {
   t.is(rule.children[0].match.name, "quxx")
 })
 
-test("parses name modifier", (t) => {
+test("parses name modifier", t => {
   const rule = parseRule(t, `foo -> bar?`)
   t.is(rule.children[0].type, "Optional")
   t.is(rule.children[0].atom.type, "Name")
   t.is(rule.children[0].atom.name, "bar")
 })
 
-test("parses token modifier", (t) => {
+test("parses token modifier", t => {
   const rule = parseRule(t, `foo -> "quxx"?`)
   t.is(rule.children[0].type, "Optional")
   t.is(rule.children[0].atom.type, "Token")
   t.is(rule.children[0].atom.name, "quxx")
 })
 
-test("parses key modifier", (t) => {
+test("parses key modifier", t => {
   const rule = parseRule(t, `foo -> bar:"quxx"?`)
   t.is(rule.children[0].type, "Key")
   t.is(rule.children[0].key.type, "Name")
@@ -113,27 +113,27 @@ test("parses key modifier", (t) => {
   t.is(rule.children[0].match.region.start.col, 12)
 })
 
-test("disallows multiple modifiers", (t) => {
-  t.throws((t) => parseRule(t, `foo -> bar*?`), { message: /^Expected space \(found \?\)/ })
+test("disallows multiple modifiers", t => {
+  t.throws(t => parseRule(t, `foo -> bar*?`), { message: /^Expected space \(found \?\)/ })
 })
 
-test("handles EOF", (t) => {
+test("handles EOF", t => {
   parseGrammar(`foo -> bar`)
   parseGrammar(`foo -> "quxx"`)
   parseGrammar(`foo ->`)
   t.throws(() => parseGrammar(`foo -> bar:`), { message: /^Expected value at EOF/ })
 })
 
-test("throws if key is a token", (t) => {
+test("throws if key is a token", t => {
   t.throws(() => parseGrammar(`r -> "quxx":`), { message: /^Can't use token as key/ })
 })
 
-test("requires spaces around values", (t) => {
+test("requires spaces around values", t => {
   t.throws(() => parseGrammar(`r -> foo"bar"`), { message: /^Expected space/ })
   t.throws(() => parseGrammar(`r -> "bar"foo`), { message: /^Expected space/ })
   t.throws(() => parseGrammar(`r -> foo[]`), { message: /^Expected space/ })
 })
 
-test("requires no space around colon", (t) => {
+test("requires no space around colon", t => {
   t.throws(() => parseGrammar(`r -> foo: "bar"`), { message: /^Expected value/ })
 })

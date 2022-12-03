@@ -4,9 +4,9 @@ const { Node, Pos, Region } = require("./node")
 
 const lexer = moo.compile({
   newline: { match: "\n", lineBreaks: true },
-  _op: { match: [":", "?", "*", "+", "->"], type: (x) => x },
+  _op: { match: [":", "?", "*", "+", "->"], type: x => x },
   list: "[]",
-  string: { match: /"(?:\\["\\]|[^\n"\\])*"/, value: (s) => s.slice(1, -1) },
+  string: { match: /"(?:\\["\\]|[^\n"\\])*"/, value: s => s.slice(1, -1) },
   space: /[ \t\f\r]+/,
   identifier: /[A-Za-z_][A-Za-z0-9_-]*/,
   comment: /\/\/.*$/,

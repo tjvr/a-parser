@@ -74,7 +74,7 @@ class LR0 {
       this.rule.name +
       " → " +
       children
-        .map((child) => {
+        .map(child => {
           switch (child.type) {
             case "name":
               return child.name
@@ -172,7 +172,7 @@ function childKey(child) {
 }
 
 function seedKey(seedItems) {
-  return seedItems.map((item) => item.id).join(":")
+  return seedItems.map(item => item.id).join(":")
 }
 
 function dotStr(x) {
@@ -325,7 +325,7 @@ function compileReducer(rule) {
   for (let index = children.length - 1; index >= 0; index--) {
     source += "var c" + index + " = stack.pop()\n"
   }
-  const childAt = (index) => `c${index}.value`
+  const childAt = index => `c${index}.value`
 
   switch (rule.type) {
     case "null":

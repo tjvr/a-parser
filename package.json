@@ -24,7 +24,8 @@
   },
   "prettier": {
     "semi": false,
-    "trailingComma": "es5",
+    "trailingComma": "all",
+    "arrowParens": "avoid",
     "printWidth": 100
   }
 }

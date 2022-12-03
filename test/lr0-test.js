@@ -5,7 +5,7 @@ const test = require("ava")
 const grammar = require("../grammar")
 const compile = require("../lr0")
 
-test("json", (t) => {
+test("json", t => {
   const { lexer, grammar, process } = require("../examples/json")
 
   const parser = compile(grammar)
@@ -40,7 +40,7 @@ test("json", (t) => {
   t.deepEqual(process(tree), JSON.parse(source))
 })
 
-test("json benchmark", (t) => {
+test("json benchmark", t => {
   const { lexer, grammar, process } = require("../examples/json")
   const parser = compile(grammar)
 
@@ -57,7 +57,7 @@ test("json benchmark", (t) => {
   t.deepEqual(process(tree), JSON.parse(jsonFile))
 })
 
-test("brackets", (t) => {
+test("brackets", t => {
   const { lexer, grammar, process } = require("../examples/brackets")
   const parser = compile(grammar)
 

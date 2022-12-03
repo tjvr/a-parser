@@ -191,7 +191,7 @@ function buildRootType(rule) {
         semanticError(
           child,
           "List child in non-list rule",
-          "Hint: add the list marker to the rule:\n\n  " + formatRuleNode(rule)
+          "Hint: add the list marker to the rule:\n\n  " + formatRuleNode(rule),
         )
       case "Root":
         break // continue
@@ -200,7 +200,7 @@ function buildRootType(rule) {
         semanticError(
           child.key,
           "Named child in rule without node type",
-          "Hint: add an object name to the rule:\n\n  " + formatRuleNode(rule)
+          "Hint: add an object name to the rule:\n\n  " + formatRuleNode(rule),
         )
     }
 
@@ -211,7 +211,7 @@ function buildRootType(rule) {
       semanticError(
         child,
         "More than one root child",
-        "Hint: make this an object rule:\n\n  " + formatRuleNode(rule)
+        "Hint: make this an object rule:\n\n  " + formatRuleNode(rule),
       )
     }
     rootIndex = i
@@ -242,7 +242,7 @@ function buildListType(rule) {
             semanticError(
               child,
               "More than one root child",
-              "Hint: make this the list child?\n\n  " + formatRuleNode(rule)
+              "Hint: make this the list child?\n\n  " + formatRuleNode(rule),
             )
           }
           children[i] = child.match
@@ -250,7 +250,7 @@ function buildListType(rule) {
             child,
             "More than one root child",
             "Hint: list rules have up to one list child and one root child.\n\n  " +
-              formatRuleNode(rule)
+              formatRuleNode(rule),
           )
         }
         nodeType.rootIndex = i
@@ -263,7 +263,7 @@ function buildListType(rule) {
             semanticError(
               child,
               "More than one list child",
-              "Hint: make this the root child?\n\n  " + formatRuleNode(rule)
+              "Hint: make this the root child?\n\n  " + formatRuleNode(rule),
             )
           }
           children[i] = child.match
@@ -271,7 +271,7 @@ function buildListType(rule) {
             child,
             "More than one list child",
             "Hint: list rules have up to one list child and one root child.\n\n  " +
-              formatRuleNode(rule)
+              formatRuleNode(rule),
           )
         }
         nodeType.listIndex = i
@@ -282,7 +282,7 @@ function buildListType(rule) {
         semanticError(
           child,
           "Named child in list rule",
-          "Hint: make this the list child?\n\n  " + formatRuleNode(rule)
+          "Hint: make this the list child?\n\n  " + formatRuleNode(rule),
         )
     }
   }
@@ -307,14 +307,14 @@ function buildObjectType(rule) {
         semanticError(
           child,
           "Root child in object rule",
-          "Hint: add an attribute name to the child:\n\n  " + formatRuleNode(rule)
+          "Hint: add an attribute name to the child:\n\n  " + formatRuleNode(rule),
         )
       case "List":
         rule.nodeType = { type: "List" }
         semanticError(
           child,
           "List child in object rule",
-          "Hint: list children are only allowed in list rules:\n\n  " + formatRuleNode(rule)
+          "Hint: list children are only allowed in list rules:\n\n  " + formatRuleNode(rule),
         )
       case "Name":
         break // continue
@@ -359,7 +359,7 @@ function expandOptional(childNode, after) {
 
   const ruleName = result.name
 
-  after((grammar) => {
+  after(grammar => {
     if (grammar.get(ruleName).length > 0) {
       return result
     }
@@ -387,7 +387,7 @@ function expandRepeat(childNode, baseCase, after) {
 
   const ruleName = result.name
 
-  after((grammar) => {
+  after(grammar => {
     if (grammar.get(ruleName).length > 0) {
       return result
     }
@@ -550,7 +550,7 @@ function typeCheck(grammar) {
         semanticError(
           child._node,
           "Unknown name '" + child.name + "'",
-          "Hint: add a rule like:\n\n  " + child.name + " -> ...\n"
+          "Hint: add a rule like:\n\n  " + child.name + " -> ...\n",
         )
       }
     }
@@ -612,7 +612,7 @@ function fromParseTree(rules) {
         child = child.match
       }
 
-      const result = expandChild(child, (cb) => {
+      const result = expandChild(child, cb => {
         runAfter.push(cb)
       })
 

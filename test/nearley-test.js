@@ -20,7 +20,7 @@ function nearleyGrammarFrom(grammar) {
 }
 
 function nearleyRulesToJSON(rules) {
-  return rules.map((rule) => {
+  return rules.map(rule => {
     return {
       name: rule.name,
       symbols: rule.symbols,
@@ -30,7 +30,7 @@ function nearleyRulesToJSON(rules) {
 }
 
 function nearleyRulesToString(rules) {
-  return rules.map((rule) => {
+  return rules.map(rule => {
     return rule.toString() //+ "  {% d => { " + stripFunction(rule.postprocess) + "} %}"
   })
 }
@@ -39,7 +39,7 @@ function nearleyRules(grammar) {
   return nearleyRulesToJSON(nearleyGrammarFrom(grammar).rules)
 }
 
-test("null processor", (t) => {
+test("null processor", t => {
   const grammar = compile(`foo -> bar "quxx"\nbar -> "b"`)
   t.deepEqual(nearleyRules(grammar), [
     { name: "foo", symbols: ["bar", { type: "quxx" }], process: "return null" },
@@ -47,7 +47,7 @@ test("null processor", (t) => {
   ])
 })
 
-test("root processor", (t) => {
+test("root processor", t => {
   const grammar = compile(`foo -> "(" :bar ")"\nbar -> "b"`)
   t.deepEqual(nearleyRules(grammar), [
     {
@@ -59,7 +59,7 @@ test("root processor", (t) => {
   ])
 })
 
-test("root token", (t) => {
+test("root token", t => {
   const grammar = compile(`foo -> "(" :"quxx" ")"`)
   t.deepEqual(nearleyRules(grammar), [
     {
@@ -70,7 +70,7 @@ test("root token", (t) => {
   ])
 })
 
-test("object processor", (t) => {
+test("object processor", t => {
   const grammar = compile(`foo Obj -> one:bar two:"quxx"\nbar -> "b"`)
   t.deepEqual(nearleyRules(grammar), [
     {
@@ -82,7 +82,7 @@ test("object processor", (t) => {
   ])
 })
 
-test("object with no keys", (t) => {
+test("object with no keys", t => {
   const grammar = compile(`foo Obj -> bar "quxx"\nbar -> "b"`)
   t.deepEqual(nearleyRules(grammar), [
     {
@@ -94,7 +94,7 @@ test("object with no keys", (t) => {
   ])
 })
 
-test("list processor", (t) => {
+test("list processor", t => {
   const grammar = compile(`statements [] -> []:statements ";" :stmt\nstmt -> "x"`)
   t.deepEqual(nearleyRules(grammar), [
     {
@@ -106,7 +106,7 @@ test("list processor", (t) => {
   ])
 })
 
-test("empty list", (t) => {
+test("empty list", t => {
   const grammar = compile(`statements [] ->`)
   t.deepEqual(nearleyRules(grammar), [
     {
@@ -117,7 +117,7 @@ test("empty list", (t) => {
   ])
 })
 
-test("one-item list", (t) => {
+test("one-item list", t => {
   const grammar = compile(`statements [] -> "~" :stmt\nstmt -> "x"`)
   t.deepEqual(nearleyRules(grammar), [
     {
@@ -129,13 +129,13 @@ test("one-item list", (t) => {
   ])
 })
 
-test("compile nullable rule", (t) => {
+test("compile nullable rule", t => {
   const grammar = compile(`foo ->`)
   const nearleyGrammar = nearleyGrammarFrom(grammar)
   t.deepEqual(nearleyGrammar.rules[0].symbols, [])
 })
 
-test("compile meta-grammar", (t) => {
+test("compile meta-grammar", t => {
   const grammar = compile(metaGrammarSource)
   const nearleyGrammar = nearleyGrammarFrom(grammar)
   t.deepEqual(nearleyRulesToString(nearleyGrammar.rules), [
@@ -176,7 +176,7 @@ test("compile meta-grammar", (t) => {
   ])
 })
 
-test("json", (t) => {
+test("json", t => {
   const { lexer, grammar, process } = require("../examples/json")
 
   const parser = nearleyParser(grammar)
@@ -211,7 +211,7 @@ test("json", (t) => {
   t.deepEqual(process(tree), JSON.parse(source))
 })
 
-test("json benchmark", (t) => {
+test("json benchmark", t => {
   const { lexer, grammar, process } = require("../examples/json")
   const parser = nearleyParser(grammar)
 

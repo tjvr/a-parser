@@ -14,7 +14,7 @@ const lexer = moo.compile({
   ";": ";",
   _keyword: {
     match: ["if", "then", "else"],
-    type: (x) => x,
+    type: x => x,
   },
   number: /[0-9]+/,
 })
@@ -46,7 +46,7 @@ function hint() {
   let tokenTypes = parser.expectedTypes()
 
   const l = lexer.clone()
-  tokenTypes = tokenTypes.filter((type) => {
+  tokenTypes = tokenTypes.filter(type => {
     l.reset(type)
     try {
       if (l.next().type === type) {
@@ -98,7 +98,7 @@ const rl = readline.createInterface({
   output: process.stdout,
 })
 rl.prompt("? ")
-rl.on("line", (line) => {
+rl.on("line", line => {
   let program
   try {
     program = parse(line)

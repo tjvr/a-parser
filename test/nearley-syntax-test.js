@@ -19,7 +19,7 @@ function parseGrammarWithNearley(t, source) {
     try {
       metaParser.eat(tok)
     } catch (e) {
-      console.log(p.table.map((column) => column.states.map((x) => x.toString())))
+      console.log(p.table.map(column => column.states.map(x => x.toString())))
       throw e
     }
   }
@@ -35,19 +35,19 @@ function parseRuleWithNearley(t, source) {
   return rule
 }
 
-test.before((t) => {
+test.before(t => {
   const metaGrammar = newGrammar(meta.grammarSource)
   metaParser = nearleyParser(metaGrammar)
 })
 
-test("empty rule", (t) => {
+test("empty rule", t => {
   const rule = parseRuleWithNearley(t, `foo -> `)
   t.is(rule.name, "foo")
   t.is(rule.nameType, undefined)
   t.deepEqual(rule.children, [])
 })
 
-test("name rule", (t) => {
+test("name rule", t => {
   const rule = parseRuleWithNearley(t, `foo -> bar \n`)
   t.is(rule.name, "foo")
   t.is(rule.nameType, undefined)
@@ -55,13 +55,13 @@ test("name rule", (t) => {
   t.is(rule.children[0].name, "bar")
 })
 
-test("parse meta-grammar with itself", (t) => {
+test("parse meta-grammar with itself", t => {
   const nearleyTree = parseGrammarWithNearley(t, metaGrammarSource)
   const tree = parseTreeFromGrammarSource(metaGrammarSource)
   t.deepEqual(nearleyTree, tree.withoutRegions())
 })
 
-test("allow EBNF in first rule", (t) => {
+test("allow EBNF in first rule", t => {
   const l = moo.compile({
     " ": " ",
     word: /[a-z]+/,
