@@ -3,7 +3,7 @@ const test = require("ava")
 const meta = require("../grammar/meta")
 const grammar = require("../grammar/grammar")
 const parseGrammar = meta.parse
-const buildType = grammar._buildType
+const buildType = grammar.buildType
 const expandRules = grammar.fromParseTree
 
 function parseRule(t, source) {

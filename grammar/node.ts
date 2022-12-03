@@ -21,7 +21,10 @@ function stringify(value, indent) {
   return s + indent + "]"
 }
 
-class Node {
+export class Node {
+  public readonly type: String
+  public readonly region: Region
+
   constructor(type, region, attrs) {
     if (hasOwnProperty.call(attrs, "type")) {
       throw new Error("Cannot set 'type' property on a Node")
@@ -47,8 +50,7 @@ class Node {
     }
   }
 
-  stringify(indent) {
-    indent = indent || ""
+  stringify(indent = "") {
     const nextIndent = indent + "  "
 
     //let s = "{\n"
@@ -89,12 +91,12 @@ class Node {
   }
 }
 
-class Region {
-  constructor(start, end, buffer) {
-    this.start = start // Pos
-    this.end = end // Pos
-    this.buffer = buffer // String
-  }
+export class Region {
+  constructor(
+    public readonly start: Pos,
+    public readonly end: Pos,
+    public readonly buffer: string,
+  ) {}
 
   from(token, buffer) {
     return new Region(Pos.before(token), Pos.after(token), buffer)
@@ -130,12 +132,12 @@ class Region {
   }
 }
 
-class Pos {
-  constructor(line, col, offset) {
-    this.line = line | 0 // 1-based
-    this.col = col | 0 // 1-based
-    this.offset = offset | 0
-  }
+export class Pos {
+  constructor(
+    public readonly line: number, // 1-based
+    public readonly col: number, // 1-based
+    public readonly offset: number,
+  ) {}
 
   static before(token) {
     return new Pos(token.line, token.col, token.offset)
@@ -152,5 +154,3 @@ class Pos {
     return new Pos(line, col, offset)
   }
 }
-
-module.exports = { Node, Pos, Region }

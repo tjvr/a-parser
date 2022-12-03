@@ -1,8 +1,8 @@
-const moo = require("moo")
+import moo from "moo"
 
-const { Node, Pos, Region } = require("./node")
+import { Node, Pos, Region } from "./node"
 
-const lexer = moo.compile({
+export const lexer = moo.compile({
   newline: { match: "\n", lineBreaks: true },
   _op: { match: [":", "?", "*", "+", "->"], type: x => x },
   list: "[]",
@@ -13,7 +13,7 @@ const lexer = moo.compile({
   error: moo.error,
 })
 
-const grammarSource = `
+export const grammarSource = `
 
 grammar Grammar -> blankLines rules:rules blankLines
 
@@ -52,7 +52,7 @@ match Name  -> name:"identifier"
 
 `
 
-function parse(buffer) {
+export function parse(buffer) {
   lexer.reset(buffer)
 
   var tok
@@ -63,7 +63,7 @@ function parse(buffer) {
   }
   next()
 
-  function syntaxError(message) {
+  function syntaxError(message): never {
     if (tok && tok.type === "error") {
       message = "Invalid syntax"
     }
@@ -73,13 +73,13 @@ function parse(buffer) {
     throw new Error(lexer.formatError(tok, message))
   }
 
-  function expectError(expected) {
+  function expectError(expected): never {
     let message = "Expected " + expected
     if (tok) message += " (found " + tok.type + ")"
     syntaxError(message)
   }
 
-  function expect(expectedType, message) {
+  function expect(expectedType) {
     if (tok && tok.type === expectedType) {
       const found = tok
       next()
@@ -208,7 +208,7 @@ function parse(buffer) {
 
   function parseRule() {
     const start = Pos.before(tok)
-    const attrs = {}
+    const attrs: any = {}
     attrs.name = expect("identifier").value
     expect("space")
     attrs.nodeType = null
@@ -219,7 +219,7 @@ function parse(buffer) {
     expect("->")
     attrs.children = []
     if (!tok || tok.type === "newline") {
-      return new node("Rule", start, attrs)
+      return node("Rule", start, attrs)
     }
     expect("space")
     while (tok && tok.type !== "newline") {
@@ -232,9 +232,9 @@ function parse(buffer) {
       if (tok.type === ":" && symbol.type === "Token") {
         syntaxError("Can't use token as key")
       }
-      expect("space", "Expected space")
+      expect("space")
     }
-    return new node("Rule", start, attrs)
+    return node("Rule", start, attrs)
   }
 
   function parseFile() {
@@ -259,4 +259,3 @@ function parse(buffer) {
   return parseFile()
 }
 
-module.exports = { lexer, grammarSource, parse }

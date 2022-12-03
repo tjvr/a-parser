@@ -1,8 +1,13 @@
-const assert = require("assert")
-const hasOwnProperty = Object.prototype.hasOwnProperty
-const meta = require("./meta")
+import assert from "assert"
 
-class Grammar {
+import * as meta from "./meta"
+
+const hasOwnProperty = Object.prototype.hasOwnProperty
+
+export class Grammar {
+  private rulesByName: Map<string, any>
+  private rules: any[]
+
   constructor() {
     this.rulesByName = new Map()
     this.rules = []
@@ -126,7 +131,7 @@ function formatAtom(child) {
   }
 }
 
-function semanticError(node, message, extra) {
+function semanticError(node, message, extra?: string): never {
   throw new Error(node.formatError(message) + (extra ? "\n" + extra : "") + "\n")
 }
 
@@ -226,7 +231,7 @@ function buildRootType(rule) {
 function buildListType(rule) {
   const children = rule.children
 
-  const nodeType = { type: "list" }
+  const nodeType: any = { type: "list" }
 
   for (var i = 0; i < children.length; i++) {
     const child = children[i]
@@ -333,7 +338,7 @@ function buildObjectType(rule) {
   return { type: "object", object: name, keys }
 }
 
-function buildType(rule) {
+export function buildType(rule) {
   assert.equal(rule.type, "Rule")
   const type = rule.nodeType ? rule.nodeType.type : "Default"
   switch (type) {
@@ -346,7 +351,7 @@ function buildType(rule) {
   }
 }
 
-function resultName(child, modifier) {
+function resultName(child, modifier): any {
   const name = child.type === "name" ? child.name : "%" + child.name
   return { type: "name", name: name + modifier }
 }
@@ -512,7 +517,6 @@ function ruleType(typeMap, grammar, rule) {
         default:
           assert.fail("Unexpected child type")
       }
-      return compileRootProcessor(rule.rootIndex, rule.children)
     case "object":
       return "object"
     case "list":
@@ -591,7 +595,7 @@ function typeCheck(grammar) {
   }
 }
 
-function fromParseTree(rules) {
+export function fromParseTree(rules) {
   const grammar = new Grammar()
   const runAfter = []
 
@@ -641,16 +645,9 @@ function fromParseTree(rules) {
   return grammar
 }
 
-function newGrammar(source) {
-  const parseTree = meta.parse(source)
+export function newGrammar(source) {
+  const parseTree: any = meta.parse(source)
   const rules = parseTree.rules
   const grammar = fromParseTree(rules)
   return grammar
-}
-
-module.exports = {
-  newGrammar,
-  Grammar,
-  fromParseTree,
-  _buildType: buildType,
 }
