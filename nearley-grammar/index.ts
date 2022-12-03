@@ -1,6 +1,6 @@
-const moo = require("moo")
+import moo from "moo"
 
-const newGrammar = require("../grammar").newGrammar
+import { newGrammar } from "../grammar"
 
 function literals(list) {
   var rules = {}
@@ -10,7 +10,7 @@ function literals(list) {
   return rules
 }
 
-const lexer = moo.states({
+export const lexer = moo.states({
   main: {
     include: "_rules",
     charclass: {
@@ -47,7 +47,7 @@ const lexer = moo.states({
   },
 })
 
-const grammar = newGrammar(`
+export const grammar = newGrammar(`
 
 final -> _ :program _ //"ws"?
 
@@ -102,8 +102,3 @@ ws -> "ws"
 ws -> "ws"? "comment" _
 
 `)
-
-module.exports = {
-  lexer,
-  grammar,
-}
