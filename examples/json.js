@@ -7,7 +7,7 @@ const lexer = moo.compile({
   NUMBER: /-?(?:[0-9]|[1-9][0-9]+)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?\b/,
   STRING: {
     match: /"(?:\\["bfnrt\/\\]|\\u[a-fA-F0-9]{4}|[^"\\])*"/,
-    value: x => JSON.parse(x),
+    value: (x) => JSON.parse(x),
   },
   "{": "{",
   "}": "}",

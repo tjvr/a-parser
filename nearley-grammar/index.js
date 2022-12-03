@@ -15,7 +15,7 @@ const lexer = moo.states({
     include: "_rules",
     charclass: {
       match: /\.|\[(?:\\.|[^\\\n])+?\]/,
-      value: x => new RegExp(x),
+      value: (x) => new RegExp(x),
     },
   },
   // Both macro arguments and charclasses are both enclosed in [ ].
@@ -31,17 +31,17 @@ const lexer = moo.states({
     arrow: { match: /[=-]+\>/, next: "main" },
     js: {
       match: /\{\%(?:[^%]|\%[^}])*\%\}/,
-      value: x => x.slice(2, -2),
+      value: (x) => x.slice(2, -2),
     },
     word: { match: /[\w\?\+]+/, next: "afterWord" },
     string: {
       match: /"(?:[^\\"\n]|\\["\\/bfnrt]|\\u[a-fA-F0-9]{4})*"/,
-      value: x => JSON.parse(x),
+      value: (x) => JSON.parse(x),
       next: "main",
     },
     btstring: {
       match: /`[^`]*`/,
-      value: x => x.slice(1, -1),
+      value: (x) => x.slice(1, -1),
       next: "main",
     },
   },

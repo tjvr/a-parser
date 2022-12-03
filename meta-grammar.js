@@ -80,7 +80,7 @@ const tree = meta.parse(program)
 //console.log()
 const g = grammar.fromParseTree(tree.rules)
 for (let rule of g.rules) {
-  console.log(rule.name + " -> " + rule.children.map(x => x.name).join(" "))
+  console.log(rule.name + " -> " + rule.children.map((x) => x.name).join(" "))
   if (rule.type === "object") {
     console.log(rule.object + " { " + Object.keys(rule.keys).join(", ") + " }")
   } else if (rule.type === "root") {

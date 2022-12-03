@@ -359,7 +359,7 @@ function expandOptional(childNode, after) {
 
   const ruleName = result.name
 
-  after(grammar => {
+  after((grammar) => {
     if (grammar.get(ruleName).length > 0) {
       return result
     }
@@ -387,7 +387,7 @@ function expandRepeat(childNode, baseCase, after) {
 
   const ruleName = result.name
 
-  after(grammar => {
+  after((grammar) => {
     if (grammar.get(ruleName).length > 0) {
       return result
     }
@@ -612,7 +612,7 @@ function fromParseTree(rules) {
         child = child.match
       }
 
-      const result = expandChild(child, cb => {
+      const result = expandChild(child, (cb) => {
         runAfter.push(cb)
       })
 

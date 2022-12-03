@@ -2,13 +2,13 @@ const test = require("ava")
 
 const { Node, Pos, Region } = require("../grammar")
 
-test("warns if type is in attrs", t => {
+test("warns if type is in attrs", (t) => {
   t.throws(() => new Node("foo", null, { type: "bar" }), {
     message: /^Cannot set 'type' property on a Node/,
   })
 })
 
-test("formats region", t => {
+test("formats region", (t) => {
   const region = new Region(new Pos(2, 8, 15), new Pos(2, 11, 18), "foo -> \nfoo -> bar quxx")
 
   // prettier-ignore
@@ -18,7 +18,7 @@ test("formats region", t => {
   )
 })
 
-test("formats region at end", t => {
+test("formats region at end", (t) => {
   const region = new Region(new Pos(1, 21, 20), new Pos(1, 26, 25), 'foo -> "(" :bar ")" :quxx')
 
   // prettier-ignore
@@ -28,7 +28,7 @@ test("formats region at end", t => {
   )
 })
 
-test("formats region error", t => {
+test("formats region error", (t) => {
   const region = new Region(new Pos(2, 8, 15), new Pos(2, 11, 18), "foo -> \nfoo -> bar quxx")
 
   // prettier-ignore

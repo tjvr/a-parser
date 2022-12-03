@@ -80,10 +80,10 @@ class Node {
     const newAttrs = {}
     this.eachAttribute((key, value) => {
       newAttrs[key] = Array.isArray(value)
-        ? value.map(item => (item.withoutRegions ? item.withoutRegions() : item))
+        ? value.map((item) => (item.withoutRegions ? item.withoutRegions() : item))
         : value && value.withoutRegions
-          ? value.withoutRegions()
-          : value
+        ? value.withoutRegions()
+        : value
     })
     return new Node(this.type, null, newAttrs)
   }
