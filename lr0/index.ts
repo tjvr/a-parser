@@ -1,9 +1,14 @@
-const assert = require("assert")
+import assert from "assert"
 
-const grammar = require("../grammar")
-const { Node } = require("../grammar")
+import * as grammar from "../grammar"
+import { Node, Grammar } from "../grammar"
 
 class LR0Parser {
+  public readonly grammar: Grammar
+  public readonly states: any[]
+  private state: any
+  private stack: any[]
+
   constructor(grammar) {
     this.grammar = grammar
     const rawStates = generateStates(grammar)
@@ -57,6 +62,15 @@ class LR0Parser {
  * An LR0 item represents a particular point in the parsing of a rule
  */
 class LR0 {
+  static highestId: number
+
+  public readonly id: number
+  public readonly rule: any
+  public readonly dot: number // XXX
+  public readonly wants: any
+  public readonly advance: any
+  public readonly isAccepting: boolean
+
   constructor(rule, dot) {
     this.id = ++LR0.highestId
     this.rule = rule
@@ -111,6 +125,12 @@ LR0.highestId = 0
  * integer.
  */
 class State {
+  public items: any[]
+  public index: number
+  public transitions: Map<string, State>
+  public reductions: any[]
+  public reduction: any
+
   constructor(index, items) {
     this.items = items
     this.index = index
@@ -441,8 +461,6 @@ function evalWithNode(source) {
   return eval("(function() {\n" + source + "\n}())")
 }
 
-function compile(grammar) {
+export default function compile(grammar) {
   return new LR0Parser(grammar)
 }
-
-module.exports = compile

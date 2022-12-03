@@ -3,7 +3,7 @@ const fs = require("fs")
 const test = require("ava")
 
 const grammar = require("../grammar")
-const compile = require("../lr0")
+import compile from "../lr0"
 
 test("json", t => {
   const { lexer, grammar, process } = require("../examples/json")
@@ -48,6 +48,7 @@ test("json benchmark", t => {
 
   lexer.reset(jsonFile)
   parser.reset()
+  let tok
   while ((tok = lexer.next())) {
     if (tok.type === "space") continue
     parser.eat(tok)
