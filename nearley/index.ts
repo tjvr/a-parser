@@ -1,10 +1,14 @@
-const assert = require("assert")
+import assert from "assert"
+import nearley from "nearley"
 
-const grammar = require("../grammar")
-
-const nearley = require("nearley")
+import * as grammar from "../grammar"
+import {Grammar} from "../grammar"
 
 class NearleyParser {
+  private nearleyParser: any
+  private grammar: Grammar
+  private nearleyGrammar: any
+
   constructor(g) {
     if (typeof g !== "object" || !(g instanceof grammar.Grammar)) {
       throw new Error("Expected a Grammar")
@@ -57,6 +61,8 @@ class NearleyParser {
 }
 
 class SingleTokenLexer {
+  public token: any
+
   reset(token) {
     this.token = token
   }
@@ -173,8 +179,6 @@ function nuller() {
   return null
 }
 
-function newParser(grammar) {
+export default function newParser(grammar) {
   return new NearleyParser(grammar)
 }
-
-module.exports = newParser

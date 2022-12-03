@@ -5,7 +5,7 @@ const moo = require("moo")
 const meta = require("../grammar/meta")
 const grammar = require("../grammar/grammar")
 const { Node, newGrammar } = require("../grammar")
-const nearleyParser = require("../nearley")
+import nearleyParser from "../nearley"
 const metaLexer = meta.lexer
 const metaGrammarSource = meta.grammarSource
 const parseTreeFromGrammarSource = meta.parse

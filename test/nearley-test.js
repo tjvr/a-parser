@@ -4,7 +4,7 @@ const test = require("ava")
 
 const meta = require("../grammar/meta")
 const grammar = require("../grammar/grammar")
-const nearleyParser = require("../nearley")
+import nearleyParser from "../nearley"
 const compile = grammar.newGrammar
 const metaGrammarSource = meta.grammarSource
 
@@ -219,6 +219,7 @@ test("json benchmark", t => {
 
   lexer.reset(jsonFile)
   parser.reset()
+  let tok
   while ((tok = lexer.next())) {
     if (tok.type === "space") continue
     parser.eat(tok)
