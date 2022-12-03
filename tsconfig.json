@@ -5,7 +5,8 @@
     "target": "es6",
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "module": "commonjs"
+    "module": "commonjs",
+    "esModuleInterop": true
   },
   "include": [
       "./benchmark",

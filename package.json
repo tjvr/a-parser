@@ -3,7 +3,7 @@
     "test": "ava test/",
     "fmt": "prettier --write *.js */*.js",
     "fmt-staged": "lint-staged",
-    "benchmark": "benchr benchmark/benchmark.js"
+    "benchmark": "tsc && benchr built/benchmark/benchmark.js"
   },
   "devDependencies": {
     "ava": "^5.1.0",

@@ -1,23 +1,24 @@
-const fs = require("fs")
-const path = require("path")
+import * as fs from "fs"
 
+import { lexer, grammar, process } from "../examples/json"
+import compileNearley from "../nearley"
+import compileLR0 from "../lr0"
+import compileLR0Oneshot from "../lr0-oneshot"
+
+// @ts-ignore `suite` is defined by the benchr runner.
 suite("json", () => {
-  const { lexer, grammar, process } = require("../examples/json")
 
-  const compileNearley = require("../nearley")
   const nearleyParser = compileNearley(grammar)
-
-  const compileLR0 = require("../lr0")
   const lr0Parser = compileLR0(grammar)
-
-  const compileLR0Oneshot = require("../lr0-oneshot")
   const lr0OneshotParser = compileLR0Oneshot(grammar)
 
   let jsonFile = fs.readFileSync("benchmark/json/sample1k.json", "utf-8")
 
+  // @ts-ignore `benchmark` is defined by the benchr runner.
   benchmark("nearley", () => {
     lexer.reset(jsonFile)
     nearleyParser.reset()
+    let tok
     while ((tok = lexer.next())) {
       if (tok.type === "space") continue
       nearleyParser.eat(tok)
@@ -26,9 +27,11 @@ suite("json", () => {
     // process(tree)
   })
 
+  // @ts-ignore `benchmark` is defined by the benchr runner.
   benchmark("lr0", () => {
     lexer.reset(jsonFile)
     lr0Parser.reset()
+    let tok
     while ((tok = lexer.next())) {
       if (tok.type === "space") continue
       lr0Parser.eat(tok)
@@ -37,6 +40,7 @@ suite("json", () => {
     // process(tree)
   })
 
+  // @ts-ignore `benchmark` is defined by the benchr runner.
   benchmark("lr0-oneshot", () => {
     lexer.reset(jsonFile)
     const tree = lr0OneshotParser.parse(() => {
