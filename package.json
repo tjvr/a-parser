@@ -15,6 +15,7 @@
     "typescript": "^4.9.3"
   },
   "dependencies": {
+    "@types/node": "^18.11.10",
     "moo": "^0.5.2"
   },
   "pre-commit": "fmt-staged",
