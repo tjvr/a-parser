@@ -1,8 +1,8 @@
-const moo = require("moo")
+import moo from "moo"
 
-const newGrammar = require("../grammar").newGrammar
+import { newGrammar } from "../grammar"
 
-const lexer = moo.compile({
+export const lexer = moo.compile({
   "(": "(",
   ")": ")",
   "+": "+",
@@ -10,7 +10,7 @@ const lexer = moo.compile({
   space: / +/,
 })
 
-const grammar = newGrammar(`
+export const grammar = newGrammar(`
 
 Expr -> "(" :Expr ")"
 Expr -> :Factor
@@ -21,17 +21,11 @@ Factor Plus -> left:Factor "+" right:"num"
 
 `)
 
-function process(node) {
+export function process(node) {
   switch (node.type) {
     case "Num":
       return node.value
     case "Plus":
       return ["+", node.left, node.right]
   }
-}
-
-module.exports = {
-  lexer,
-  grammar,
-  process,
 }

@@ -1,8 +1,8 @@
-const moo = require("moo")
+import moo from "moo"
 
-const newGrammar = require("../grammar").newGrammar
+import { newGrammar } from "../grammar"
 
-const lexer = moo.compile({
+export const lexer = moo.compile({
   "(": "(",
   ")": ")",
   ";": ";",
@@ -11,7 +11,7 @@ const lexer = moo.compile({
   space: / +/,
 })
 
-const grammar = newGrammar(`
+export const grammar = newGrammar(`
 
 S Id -> "(" a:L ")"
 S Id -> a:"word"
@@ -21,7 +21,7 @@ L Seq -> a:L ";" b:S
 
 `)
 
-function process(node) {
+export function process(node) {
   if (typeof node !== "object") {
     return node
   }
@@ -31,10 +31,4 @@ function process(node) {
     case "Id":
       return process(node.a)
   }
-}
-
-module.exports = {
-  lexer,
-  grammar,
-  process,
 }

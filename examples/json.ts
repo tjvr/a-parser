@@ -1,8 +1,8 @@
-const moo = require("moo")
+import moo from "moo"
 
-const newGrammar = require("../grammar").newGrammar
+import { newGrammar } from "../grammar"
 
-const lexer = moo.compile({
+export const lexer = moo.compile({
   space: { match: /\s+/, lineBreaks: true },
   NUMBER: /-?(?:[0-9]|[1-9][0-9]+)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?\b/,
   STRING: {
@@ -22,7 +22,7 @@ const lexer = moo.compile({
 
 // This JSON grammar has been slightly modified to remove nullable rules, so
 // that the naive LR0 parser works properly.
-const grammar = newGrammar(`
+export const grammar = newGrammar(`
 
 json Object -> "{" items:items "}"
 json Object -> "{" "}"
@@ -48,7 +48,7 @@ item Item -> key:"STRING" ":" value:json
 
 // This grammar is right-recursive, to suit a naive LL1 parser. It embraces
 // nullable rules.
-const rightRecursiveGrammar = newGrammar(`
+export const rightRecursiveGrammar = newGrammar(`
 
 json Object -> "{" items:items "}"
 json Array -> "[" items:array "]"
@@ -70,7 +70,7 @@ item Item -> key:"STRING" ":" value:json
 
 `)
 
-function process(node) {
+export function process(node) {
   switch (node.type) {
     case "Object":
       const d = {}
@@ -93,11 +93,4 @@ function process(node) {
     case "Null":
       return null
   }
-}
-
-module.exports = {
-  lexer,
-  grammar,
-  rightRecursiveGrammar,
-  process,
 }
